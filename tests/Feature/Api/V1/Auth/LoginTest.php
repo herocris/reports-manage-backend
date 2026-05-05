@@ -1,0 +1,116 @@
+<?php
+
+namespace Tests\Feature\Api\V1\Auth;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * Feature tests for web and mobile login flows,
+ * including invalid credential and missing-field scenarios.
+ */
+class LoginTest extends TestCase
+{
+    use LazilyRefreshDatabase;
+
+    public function test_user_can_login_on_mobile_endpoint_with_valid_credentials(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->postJson('/api/v1/auth/mobile/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => ['token', 'user' => ['id', 'name', 'email']],
+            ]);
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'auth',
+            'event' => 'login',
+            'description' => 'auth.login',
+            'causer_type' => User::class,
+            'causer_id' => $user->id,
+        ]);
+    }
+
+    public function test_user_can_login_on_web_endpoint_with_valid_credentials(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->postJson('/api/v1/auth/web/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => ['user' => ['id', 'name', 'email']],
+            ])
+            ->assertJsonMissingPath('data.token');
+    }
+
+    public function test_legacy_login_endpoint_remains_available_for_mobile_clients(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->postJson('/api/v1/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()->assertJsonStructure([
+            'success',
+            'message',
+            'data' => ['token', 'user' => ['id', 'name', 'email']],
+        ]);
+    }
+
+    public function test_login_returns_401_with_invalid_credentials(): void
+    {
+        User::factory()->create(['email' => 'user@example.com']);
+
+        $response = $this->postJson('/api/v1/auth/mobile/login', [
+            'email' => 'user@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertUnauthorized()
+            ->assertJson([
+                'success' => false,
+                'message' => 'Invalid credentials.',
+            ]);
+
+        $this->assertDatabaseHas('activity_log', [
+            'log_name' => 'auth',
+            'event' => 'failed',
+            'description' => 'auth.failed',
+        ]);
+    }
+
+    public function test_login_validates_required_fields(): void
+    {
+        $response = $this->postJson('/api/v1/auth/mobile/login', []);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['email', 'password']);
+    }
+
+    public function test_login_validates_email_format(): void
+    {
+        $response = $this->postJson('/api/v1/auth/mobile/login', [
+            'email' => 'not-an-email',
+            'password' => 'password',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
+    }
+}
