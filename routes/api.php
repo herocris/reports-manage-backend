@@ -114,6 +114,7 @@ Route::prefix('v1')->as('v1.')->group(function (): void {
             Route::post('/', [PersonaController::class, 'store'])->middleware('permission:personas.create')->name('store');
             Route::post('{persona}/restore', [PersonaController::class, 'restore'])->middleware('permission:personas.restore')->name('restore')->withTrashed();
             Route::get('{persona}', [PersonaController::class, 'show'])->middleware('permission:personas.view')->name('show');
+            Route::get('{persona}/edit', [PersonaController::class, 'edit'])->middleware('permission:personas.view')->name('edit');
             Route::match(['put', 'patch'], '{persona}', [PersonaController::class, 'update'])->middleware('permission:personas.update')->name('update');
             Route::delete('{persona}', [PersonaController::class, 'destroy'])->middleware('permission:personas.delete')->name('destroy');
         });

@@ -13,6 +13,7 @@ use App\Models\Informe;
 use App\Models\Persona;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\InformeIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -42,7 +43,7 @@ class InformeController extends Controller
      * configurable pagination, sort direction, and `only_trashed` scope.
      *
      * @param  IndexInformeRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<InformeResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<InformeResource>>
      */
     public function index(IndexInformeRequest $request): AnonymousResourceCollection
     {
@@ -66,7 +67,7 @@ class InformeController extends Controller
      * the pivot table `ambito_informe` is synced to the supplied list of IDs.
      *
      * @param  StoreInformeRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see InformeResource} envelope.
+     * @return JsonResponse 201 with the created {@see InformeResource} envelope.
      */
     public function store(StoreInformeRequest $request): JsonResponse
     {
@@ -94,7 +95,7 @@ class InformeController extends Controller
      * with all child records, use the {@see edit()} endpoint instead.
      *
      * @param  Informe  $informe  The resolved Informe model instance.
-     * @return InformeResource  200 with the resource envelope.
+     * @return InformeResource 200 with the resource envelope.
      */
     public function show(Informe $informe): InformeResource
     {
@@ -113,19 +114,22 @@ class InformeController extends Controller
      * access to all related data.
      *
      * @param  Informe  $informe  The resolved Informe model instance.
-     * @return InformeResource  200 with the resource envelope including all relations.
+     * @return InformeResource 200 with the resource envelope including all relations.
      */
     public function edit(Informe $informe): InformeResource
     {
         $informe->load([
             'producto',
-            'personas',
-            'bienes',
+            'personas.adjuntos',
+            'bienes.adjuntos',
             'adjuntos',
             'ubicaciones',
-            'observaciones',
+            'observaciones.usuario',
+            'observaciones.cerradaPor',
+            'observaciones.comentarios.usuario',
             'bitacoras',
             'ambitos',
+            'usuarioCreador',
         ]);
 
         return (new InformeResource($informe))->additional([
@@ -142,8 +146,8 @@ class InformeController extends Controller
      * in the new list are detached). Omitting `ambitos` leaves existing pivots unchanged.
      *
      * @param  UpdateInformeRequest  $request  Validated update payload.
-     * @param  Informe               $informe  The resolved Informe model instance.
-     * @return InformeResource  200 with the updated resource envelope.
+     * @param  Informe  $informe  The resolved Informe model instance.
+     * @return InformeResource 200 with the updated resource envelope.
      */
     public function update(UpdateInformeRequest $request, Informe $informe): InformeResource
     {
@@ -170,7 +174,7 @@ class InformeController extends Controller
      * on force-delete.
      *
      * @param  Informe  $informe  The resolved Informe model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Informe $informe): JsonResponse
     {
@@ -192,7 +196,7 @@ class InformeController extends Controller
      * `withTrashed` binding registered in `AppServiceProvider`.
      *
      * @param  Informe  $informe  The soft-deleted Informe model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Informe $informe): JsonResponse
     {
@@ -214,7 +218,7 @@ class InformeController extends Controller
      *
      * @param  Request  $request  Inline-validated request containing `persona_id` (integer, required, exists:personas,id).
      * @param  Informe  $informe  The resolved Informe model instance.
-     * @return JsonResponse  200 on success, 422 if the persona is already attached.
+     * @return JsonResponse 200 on success, 422 if the persona is already attached.
      */
     public function attachPersona(Request $request, Informe $informe): JsonResponse
     {
@@ -239,11 +243,14 @@ class InformeController extends Controller
      *
      * @param  Informe  $informe  The resolved Informe model instance.
      * @param  Persona  $persona  The resolved Persona model instance to detach.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function detachPersona(Informe $informe, Persona $persona): JsonResponse
     {
         $informe->personas()->detach($persona->id);
+        if ($persona->informes()->count() === 0) {
+            $persona->delete();
+        }
 
         return ApiResponse::success(null, 'Persona desvinculada del informe exitosamente.');
     }
@@ -257,7 +264,7 @@ class InformeController extends Controller
      *
      * @param  Request  $request  Inline-validated request containing `bien_id` (integer, required, exists:biens,id).
      * @param  Informe  $informe  The resolved Informe model instance.
-     * @return JsonResponse  200 on success, 422 if the bien is already attached.
+     * @return JsonResponse 200 on success, 422 if the bien is already attached.
      */
     public function attachBien(Request $request, Informe $informe): JsonResponse
     {
@@ -281,8 +288,8 @@ class InformeController extends Controller
      * Silently succeeds even if the bien is not currently linked.
      *
      * @param  Informe  $informe  The resolved Informe model instance.
-     * @param  Bien     $bien     The resolved Bien model instance to detach.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @param  Bien  $bien  The resolved Bien model instance to detach.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function detachBien(Informe $informe, Bien $bien): JsonResponse
     {

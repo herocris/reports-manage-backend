@@ -12,6 +12,7 @@ use App\Models\Informe;
 use App\Models\Persona;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\PersonaIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -35,7 +36,7 @@ class PersonaController extends Controller
      * includes, field selection, pagination, and `only_trashed` soft-delete scope.
      *
      * @param  IndexPersonaRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<PersonaResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<PersonaResource>>
      */
     public function index(IndexPersonaRequest $request): AnonymousResourceCollection
     {
@@ -59,17 +60,17 @@ class PersonaController extends Controller
      * The `informe_id` field is stripped from the persona's own attributes.
      *
      * @param  StorePersonaRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see PersonaResource} envelope.
+     * @return JsonResponse 201 with the created {@see PersonaResource} envelope.
      */
     public function store(StorePersonaRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $informe = Informe::query()->findOrFail($validated['informe_id']);
+        // $informe = Informe::query()->findOrFail($validated['informe_id']);
 
-        unset($validated['informe_id']);
+        // unset($validated['informe_id']);
 
         $persona = Persona::create($validated);
-        $informe->personas()->attach($persona->id);
+        // $informe->personas()->attach($persona->id);
 
         return (new PersonaResource($persona))
             ->additional([
@@ -84,7 +85,7 @@ class PersonaController extends Controller
      * Return a single persona by its primary key.
      *
      * @param  Persona  $persona  The resolved Persona model instance.
-     * @return PersonaResource  200 with the resource envelope.
+     * @return PersonaResource 200 with the resource envelope.
      */
     public function show(Persona $persona): PersonaResource
     {
@@ -95,11 +96,25 @@ class PersonaController extends Controller
     }
 
     /**
+     * Return the persona with its full association tree eager-loaded for an edit form.
+     *
+     * @param  Persona  $persona  The resolved Persona model instance.
+     * @return PersonaResource 200 with the resource envelope.
+     */
+    public function edit(Persona $persona): PersonaResource
+    {
+        return (new PersonaResource($persona->load('adjuntos')))->additional([
+            'success' => true,
+            'message' => 'Persona edit data retrieved successfully.',
+        ]);
+    }
+
+    /**
      * Apply a partial or full update to the given persona.
      *
      * @param  UpdatePersonaRequest  $request  Validated update payload.
-     * @param  Persona               $persona  The resolved Persona model instance.
-     * @return PersonaResource  200 with the updated resource envelope.
+     * @param  Persona  $persona  The resolved Persona model instance.
+     * @return PersonaResource 200 with the updated resource envelope.
      */
     public function update(UpdatePersonaRequest $request, Persona $persona): PersonaResource
     {
@@ -118,7 +133,7 @@ class PersonaController extends Controller
      * The persona can be recovered via {@see restore()}.
      *
      * @param  Persona  $persona  The resolved Persona model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Persona $persona): JsonResponse
     {
@@ -134,7 +149,7 @@ class PersonaController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  Persona  $persona  The soft-deleted Persona model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Persona $persona): JsonResponse
     {
