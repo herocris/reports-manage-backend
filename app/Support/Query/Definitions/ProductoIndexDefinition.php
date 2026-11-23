@@ -2,13 +2,14 @@
 
 namespace App\Support\Query\Definitions;
 
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Index query definition for the Producto resource.
  *
  * Configures search, sort, filters, and allowed includes
- * used by {@see \App\Support\Query\IndexQueryApplier}.
+ * used by {@see IndexQueryApplier}.
  */
 class ProductoIndexDefinition
 {
@@ -28,9 +29,9 @@ class ProductoIndexDefinition
                 'nombre' => fn (Builder $query, string $value) => $query->where('nombre', 'like', '%'.$value.'%'),
                 'descripcion' => fn (Builder $query, string $value) => $query->where('descripcion', 'like', '%'.$value.'%'),
             ],
-            'default_sort' => 'created_at',
-            'default_direction' => 'desc',
-            'default_per_page' => 15,
+            'default_sort' => 'id',
+            'default_direction' => 'asc',
+            'default_per_page' => 10,
         ];
     }
 }
