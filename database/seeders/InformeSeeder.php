@@ -37,10 +37,13 @@ class InformeSeeder extends Seeder
                 'adjuntable_type' => Informe::class,
             ]);
 
-            Observacion::factory()->count(rand(1, 5))->create([
-                'informe_id' => $informe->id,
-                'usuario_id' => $users->random()->id,
-            ]);
+            foreach (range(1, rand(1, 5)) as $numero) {
+                Observacion::factory()->create([
+                    'numero' => $numero,
+                    'informe_id' => $informe->id,
+                    'usuario_id' => $users->random()->id,
+                ]);
+            }
 
             Bitacora::factory()->count(rand(1, 6))->create([
                 'informe_id' => $informe->id,

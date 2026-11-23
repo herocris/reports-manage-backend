@@ -9,9 +9,14 @@ use OpenApi\Attributes as OA;
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'numero', type: 'integer', example: 3),
+        new OA\Property(property: 'titulo', type: 'string', example: 'Corregir las conclusiones'),
         new OA\Property(property: 'descripcion', type: 'string', example: 'Observacion relevante sobre el informe'),
+        new OA\Property(property: 'estado', type: 'string', enum: ['abierta', 'cerrada'], example: 'abierta'),
         new OA\Property(property: 'usuario_id', type: 'integer', example: 1),
         new OA\Property(property: 'informe_id', type: 'integer', example: 1),
+        new OA\Property(property: 'cerrada_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'cerrada_por_id', type: 'integer', nullable: true, example: 2),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'informe', ref: '#/components/schemas/Informe'),
@@ -20,11 +25,27 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'StoreObservacionRequest',
     type: 'object',
-    required: ['descripcion', 'usuario_id', 'informe_id'],
+    required: ['titulo', 'descripcion', 'informe_id'],
     properties: [
+        new OA\Property(property: 'titulo', type: 'string', maxLength: 255, example: 'Corregir las conclusiones'),
         new OA\Property(property: 'descripcion', type: 'string', example: 'Observacion relevante'),
-        new OA\Property(property: 'usuario_id', type: 'integer', example: 1),
         new OA\Property(property: 'informe_id', type: 'integer', example: 1),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UpdateObservacionRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'titulo', type: 'string', maxLength: 255, example: 'Conclusiones corregidas'),
+        new OA\Property(property: 'descripcion', type: 'string', example: 'Detalle actualizado de la observacion'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ObservacionComentarioRequest',
+    type: 'object',
+    required: ['contenido'],
+    properties: [
+        new OA\Property(property: 'contenido', type: 'string', example: 'Se corrigieron las conclusiones del informe.'),
     ]
 )]
 class ObservacionDocs
@@ -47,9 +68,7 @@ class ObservacionDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     #[OA\Post(
         path: '/observaciones',
@@ -58,7 +77,7 @@ class ObservacionDocs
         security: [['BearerAuth' => []], ['SanctumCookie' => []]],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/StoreObservacionRequest')
+            content: new OA\JsonContent(ref: '#/components/schemas/UpdateObservacionRequest')
         ),
         responses: [
             new OA\Response(response: 201, description: 'Observacion creada', content: new OA\JsonContent(ref: '#/components/schemas/Observacion')),
@@ -69,9 +88,7 @@ class ObservacionDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function store(): void
-    {
-    }
+    public function store(): void {}
 
     #[OA\Get(
         path: '/observaciones/{observacion}',
@@ -90,9 +107,7 @@ class ObservacionDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function show(): void
-    {
-    }
+    public function show(): void {}
 
     #[OA\Put(
         path: '/observaciones/{observacion}',
@@ -116,9 +131,41 @@ class ObservacionDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function update(): void
-    {
-    }
+    public function update(): void {}
+
+    #[OA\Post(
+        path: '/observaciones/{observacion}/comentarios',
+        tags: ['Observaciones'],
+        summary: 'Agregar un comentario a la observacion',
+        security: [['BearerAuth' => []], ['SanctumCookie' => []]],
+        parameters: [
+            new OA\Parameter(name: 'observacion', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ObservacionComentarioRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Comentario creado'),
+            new OA\Response(response: 403, description: 'Solo el responsable del informe puede comentar'),
+            new OA\Response(response: 422, description: 'Validacion fallida', content: new OA\JsonContent(ref: '#/components/schemas/ValidationResponse')),
+        ]
+    )]
+    public function storeComentario(): void {}
+
+    #[OA\Post(
+        path: '/observaciones/{observacion}/cerrar',
+        tags: ['Observaciones'],
+        summary: 'Cerrar la observacion con un comentario obligatorio',
+        security: [['BearerAuth' => []], ['SanctumCookie' => []]],
+        parameters: [
+            new OA\Parameter(name: 'observacion', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ObservacionComentarioRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Observacion cerrada', content: new OA\JsonContent(ref: '#/components/schemas/Observacion')),
+            new OA\Response(response: 403, description: 'Solo el responsable del informe puede cerrar'),
+            new OA\Response(response: 422, description: 'Validacion fallida', content: new OA\JsonContent(ref: '#/components/schemas/ValidationResponse')),
+        ]
+    )]
+    public function close(): void {}
 
     #[OA\Delete(
         path: '/observaciones/{observacion}',
@@ -137,9 +184,7 @@ class ObservacionDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function destroy(): void
-    {
-    }
+    public function destroy(): void {}
 
     #[OA\Post(
         path: '/observaciones/{observacion}/restore',
@@ -158,7 +203,5 @@ class ObservacionDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function restore(): void
-    {
-    }
+    public function restore(): void {}
 }

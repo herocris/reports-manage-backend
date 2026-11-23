@@ -20,8 +20,15 @@ class ShowUpdateDestroyObservacionTest extends TestCase
         $observacion = Observacion::factory()->create();
 
         $this->actingAs($actor)->getJson("/api/v1/observaciones/{$observacion->id}")->assertOk();
-        $this->actingAs($actor)->putJson("/api/v1/observaciones/{$observacion->id}", ['descripcion' => 'Actualizada'])
-            ->assertOk()->assertJsonFragment(['descripcion' => 'Actualizada']);
+        $this->actingAs($actor)->putJson("/api/v1/observaciones/{$observacion->id}", [
+            'titulo' => 'Título actualizado',
+            'descripcion' => 'Actualizada',
+            'numero' => 999,
+            'estado' => 'cerrada',
+        ])->assertOk()
+            ->assertJsonFragment(['titulo' => 'Título actualizado', 'descripcion' => 'Actualizada'])
+            ->assertJsonPath('data.numero', $observacion->numero)
+            ->assertJsonPath('data.estado', 'abierta');
         $this->actingAs($actor)->deleteJson("/api/v1/observaciones/{$observacion->id}")->assertOk();
 
         $this->assertSoftDeleted($observacion);

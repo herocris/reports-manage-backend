@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Api\V1\Observacion;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -14,7 +13,7 @@ class UpdateObservacionRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:observacion.update` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -33,9 +32,8 @@ class UpdateObservacionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'titulo' => ['sometimes', 'string', 'max:255'],
             'descripcion' => ['sometimes', 'string'],
-            'usuario_id'  => ['sometimes', 'integer', 'exists:users,id'],
-            'informe_id'  => ['sometimes', 'integer', 'exists:informes,id'],
         ];
     }
 }

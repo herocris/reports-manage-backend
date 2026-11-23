@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Api\V1\Observacion;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -14,7 +13,7 @@ class StoreObservacionRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:observacion.create` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -33,9 +32,9 @@ class StoreObservacionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'titulo' => ['required', 'string', 'max:255'],
             'descripcion' => ['required', 'string'],
-            'usuario_id'  => ['required', 'integer', 'exists:users,id'],
-            'informe_id'  => ['required', 'integer', 'exists:informes,id'],
+            'informe_id' => ['required', 'integer', 'exists:informes,id'],
         ];
     }
 }

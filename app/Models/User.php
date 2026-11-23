@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -29,15 +30,15 @@ use Spatie\Permission\Traits\HasRoles;
  * are excluded from API responses by the {@see UserResource} field-level
  * security rules.
  *
- * @property int              $id                  Auto-incrementing primary key.
- * @property string           $name                Full display name of the user.
- * @property string           $email               Unique email address used for login.
- * @property \Carbon\Carbon|null $email_verified_at  Timestamp when the email was verified; null if unverified.
- * @property string           $password            Bcrypt-hashed password (never returned by API).
- * @property int|null         $institucion_id      FK → institucions.id — the employing institution, or null.
- * @property \Carbon\Carbon|null $deleted_at        Timestamp of soft deletion; null when active.
- * @property \Carbon\Carbon   $created_at          Timestamp of record creation.
- * @property \Carbon\Carbon   $updated_at          Timestamp of last modification.
+ * @property int $id Auto-incrementing primary key.
+ * @property string $name Full display name of the user.
+ * @property string $email Unique email address used for login.
+ * @property Carbon|null $email_verified_at Timestamp when the email was verified; null if unverified.
+ * @property string $password Bcrypt-hashed password (never returned by API).
+ * @property int|null $institucion_id FK → institucions.id — the employing institution, or null.
+ * @property Carbon|null $deleted_at Timestamp of soft deletion; null when active.
+ * @property Carbon $created_at Timestamp of record creation.
+ * @property Carbon $updated_at Timestamp of last modification.
  */
 class User extends Authenticatable
 {
@@ -88,5 +89,17 @@ class User extends Authenticatable
     public function observaciones(): HasMany
     {
         return $this->hasMany(Observacion::class, 'usuario_id');
+    }
+
+    /** @return HasMany<Observacion, $this> */
+    public function observacionesCerradas(): HasMany
+    {
+        return $this->hasMany(Observacion::class, 'cerrada_por_id');
+    }
+
+    /** @return HasMany<ObservacionComentario, $this> */
+    public function comentariosObservacion(): HasMany
+    {
+        return $this->hasMany(ObservacionComentario::class, 'usuario_id');
     }
 }

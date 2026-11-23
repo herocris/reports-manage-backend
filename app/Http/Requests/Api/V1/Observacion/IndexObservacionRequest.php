@@ -16,7 +16,7 @@ class IndexObservacionRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:observacion.view` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -37,18 +37,22 @@ class IndexObservacionRequest extends FormRequest
         return [
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
-            'sort' => ['sometimes', 'string', Rule::in(['id', 'descripcion', 'usuario_id', 'informe_id', 'created_at', 'updated_at'])],
+            'sort' => ['sometimes', 'string', Rule::in(['id', 'numero', 'titulo', 'descripcion', 'estado', 'usuario_id', 'informe_id', 'cerrada_at', 'created_at', 'updated_at'])],
             'direction' => ['sometimes', 'string', Rule::in(['asc', 'desc'])],
             'search' => ['sometimes', 'string', 'max:255'],
             'include' => ['sometimes', 'array'],
-            'include.*' => ['string', Rule::in(['informe'])],
+            'include.*' => ['string', Rule::in(['informe', 'usuario', 'cerradaPor', 'comentarios', 'comentarios.usuario'])],
             'fields' => ['sometimes', 'array'],
-            'fields.*' => ['string', Rule::in(['id', 'descripcion', 'usuario_id', 'informe_id', 'created_at', 'updated_at'])],
+            'fields.*' => ['string', Rule::in(['id', 'numero', 'titulo', 'descripcion', 'estado', 'usuario_id', 'informe_id', 'cerrada_at', 'cerrada_por_id', 'created_at', 'updated_at'])],
             'only_trashed' => ['sometimes', 'boolean'],
             'filter' => ['sometimes', 'array'],
+            'filter.numero' => ['sometimes', 'integer', 'min:1'],
+            'filter.titulo' => ['sometimes', 'string', 'max:255'],
             'filter.descripcion' => ['sometimes', 'string', 'max:255'],
-            'filter.usuario_id' => ['sometimes', 'integer', 'exists:users,id'],
-            'filter.informe_id' => ['sometimes', 'integer', 'exists:informes,id'],
+            'filter.estado' => ['sometimes', 'string', Rule::in(['abierta', 'cerrada'])],
+            'filter.usuario_id' => ['sometimes', 'integer'],
+            'filter.informe_id' => ['sometimes', 'integer'],
+            'filter.cerrada_por_id' => ['sometimes', 'integer'],
         ];
     }
 

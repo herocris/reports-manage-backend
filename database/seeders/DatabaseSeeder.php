@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             BienSeeder::class,
             PersonaSeeder::class,
             InformeSeeder::class,
+            ObservacionComentarioSeeder::class,
             AdjuntoSeeder::class,
         ]);
     }

@@ -167,6 +167,8 @@ Route::prefix('v1')->as('v1.')->group(function (): void {
             Route::get('/', [ObservacionController::class, 'index'])->middleware('permission:observaciones.view')->name('index');
             Route::post('/', [ObservacionController::class, 'store'])->middleware('permission:observaciones.create')->name('store');
             Route::post('{observacion}/restore', [ObservacionController::class, 'restore'])->middleware('permission:observaciones.restore')->name('restore')->withTrashed();
+            Route::post('{observacion}/comentarios', [ObservacionController::class, 'storeComentario'])->middleware('permission:observaciones.update')->name('comentarios.store');
+            Route::post('{observacion}/cerrar', [ObservacionController::class, 'close'])->middleware('permission:observaciones.update')->name('close');
             Route::get('{observacion}', [ObservacionController::class, 'show'])->middleware('permission:observaciones.view')->name('show');
             Route::match(['put', 'patch'], '{observacion}', [ObservacionController::class, 'update'])->middleware('permission:observaciones.update')->name('update');
             Route::delete('{observacion}', [ObservacionController::class, 'destroy'])->middleware('permission:observaciones.delete')->name('destroy');
