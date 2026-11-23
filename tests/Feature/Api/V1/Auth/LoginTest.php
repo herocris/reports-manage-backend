@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Tests\Concerns\CreatesAuthorizedUser;
 use Tests\TestCase;
 
 /**
@@ -14,7 +15,7 @@ use Tests\TestCase;
  */
 class LoginTest extends TestCase
 {
-    use LazilyRefreshDatabase;
+    use CreatesAuthorizedUser, LazilyRefreshDatabase;
 
     public function test_user_can_login_on_mobile_endpoint_with_valid_credentials(): void
     {
@@ -57,6 +58,42 @@ class LoginTest extends TestCase
                 'data' => ['user' => ['id', 'name', 'email', 'roles', 'permissions']],
             ])
             ->assertJsonMissingPath('data.token');
+    }
+
+    public function test_frontend_can_access_informes_with_the_web_login_session_cookie(): void
+    {
+        $user = $this->createAuthorizedUser(['informes.view']);
+        $this->withHeader('Origin', 'http://localhost:5174');
+
+        $response = $this->postJson('/api/v1/auth/web/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $cookieName = config('session.cookie');
+
+        $response->assertOk()
+            ->assertCookie($cookieName)
+            ->assertJsonMissingPath('data.token');
+
+        $sessionCookie = $response->getCookie($cookieName, false);
+        $uri = '/api/v1/informes?include=producto%2Cambitos&page=1&per_page=10&sort=id&direction=asc';
+
+        $this->app['auth']->forgetGuards();
+        $this->app['session.store']->flush();
+
+        $this->getJson($uri)->assertUnauthorized();
+
+        $this->app['auth']->forgetGuards();
+        $this->app['session.store']->flush();
+
+        $this->withUnencryptedCookie($cookieName, $sessionCookie->getValue())
+            ->withCredentials()
+            ->getJson($uri)
+            ->assertOk()
+            ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5174')
+            ->assertHeader('Access-Control-Allow-Credentials', 'true')
+            ->assertJsonStructure(['data', 'meta', 'links']);
     }
 
     public function test_web_login_includes_permissions_granted_via_role(): void
