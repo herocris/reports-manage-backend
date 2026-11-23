@@ -26,7 +26,8 @@ class StorePermissionTest extends TestCase
         ]);
 
         $response->assertCreated()
-            ->assertJsonFragment(['name' => 'reports.export']);
+            ->assertJsonFragment(['name' => 'reports.export'])
+            ->assertJsonMissingPath('data.users_count');
 
         $this->assertDatabaseHas('permissions', ['name' => 'reports.export']);
     }

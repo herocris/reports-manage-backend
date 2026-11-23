@@ -24,7 +24,8 @@ class IndexPermissionTest extends TestCase
         $response = $this->actingAs($actor)->getJson('/api/v1/permissions');
 
         $response->assertOk()
-            ->assertJsonStructure(['data', 'meta', 'links']);
+            ->assertJsonStructure(['data', 'meta', 'links'])
+            ->assertJsonMissingPath('data.0.users_count');
     }
 
     public function test_index_supports_include_roles(): void

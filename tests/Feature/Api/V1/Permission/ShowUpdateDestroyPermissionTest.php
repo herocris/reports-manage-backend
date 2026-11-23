@@ -23,7 +23,8 @@ class ShowUpdateDestroyPermissionTest extends TestCase
 
         $this->actingAs($actor)->getJson("/api/v1/permissions/{$permission->id}")
             ->assertOk()
-            ->assertJsonFragment(['name' => 'reports.export']);
+            ->assertJsonFragment(['name' => 'reports.export'])
+            ->assertJsonMissingPath('data.users_count');
     }
 
     public function test_authenticated_user_can_update_a_permission_and_sync_roles(): void
@@ -38,7 +39,8 @@ class ShowUpdateDestroyPermissionTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonFragment(['name' => 'reports.download']);
+            ->assertJsonFragment(['name' => 'reports.download'])
+            ->assertJsonMissingPath('data.users_count');
 
         $this->assertDatabaseHas('permissions', ['id' => $permission->id, 'name' => 'reports.download']);
         $this->assertTrue($permission->fresh()->hasRole('admin'));

@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\PermissionResource;
 use App\Models\Permission;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\PermissionIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -19,8 +20,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  *
  * Permissions are the atomic authorization units assigned to roles or directly
  * to users. The `store` action always sets `guard_name` to `'sanctum'`. Each
- * response includes a `users_count` and the `roles` relation so that the
- * full assignment context is available to the client.
+ * responses include the `roles` relation so that the assignment context is
+ * available to the client.
  *
  * Roles can be synced in both `store` and `update`; omitting `roles` in
  * `update` preserves the existing role assignment.
@@ -32,16 +33,13 @@ class PermissionController extends Controller
     /**
      * Return a paginated, filterable list of permissions.
      *
-     * The base query includes `withCount('users')` so that the number of users
-     * (directly or via roles) holding each permission is available in the response.
-     *
      * @param  IndexPermissionRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<PermissionResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<PermissionResource>>
      */
     public function index(IndexPermissionRequest $request): AnonymousResourceCollection
     {
         $permissions = $this->applyIndexQuery(
-            Permission::query()->withCount('users'),
+            Permission::query(),
             $request->validated(),
             PermissionIndexDefinition::definition(),
         );
@@ -60,7 +58,7 @@ class PermissionController extends Controller
      * `syncRoles()` replaces all role assignments on the new permission.
      *
      * @param  StorePermissionRequest  $request  Validated creation payload (`name`, optional `roles[]`).
-     * @return JsonResponse  201 with the created {@see PermissionResource} envelope including `roles` and `users_count`.
+     * @return JsonResponse 201 with the created {@see PermissionResource} envelope including `roles`.
      */
     public function store(StorePermissionRequest $request): JsonResponse
     {
@@ -71,7 +69,7 @@ class PermissionController extends Controller
 
         $permission->syncRoles($request->validated('roles', []));
 
-        return (new PermissionResource($permission->load('roles')->loadCount('users')))
+        return (new PermissionResource($permission->load('roles')))
             ->additional([
                 'success' => true,
                 'message' => 'Permission created successfully.',
@@ -83,14 +81,14 @@ class PermissionController extends Controller
     /**
      * Return a single permission by its primary key.
      *
-     * Eager-loads `roles` and the `users_count` aggregate.
+     * Eager-loads `roles`.
      *
      * @param  Permission  $permission  The resolved Permission model instance.
-     * @return PermissionResource  200 with the resource envelope.
+     * @return PermissionResource 200 with the resource envelope.
      */
     public function show(Permission $permission): PermissionResource
     {
-        return (new PermissionResource($permission->load('roles')->loadCount('users')))
+        return (new PermissionResource($permission->load('roles')))
             ->additional([
                 'success' => true,
                 'message' => 'Permission retrieved successfully.',
@@ -104,9 +102,9 @@ class PermissionController extends Controller
      * is present, the permission's role assignments are fully replaced;
      * omitting `roles` preserves existing assignments.
      *
-     * @param  UpdatePermissionRequest  $request    Validated update payload.
-     * @param  Permission               $permission  The resolved Permission model instance.
-     * @return PermissionResource  200 with the updated resource envelope.
+     * @param  UpdatePermissionRequest  $request  Validated update payload.
+     * @param  Permission  $permission  The resolved Permission model instance.
+     * @return PermissionResource 200 with the updated resource envelope.
      */
     public function update(UpdatePermissionRequest $request, Permission $permission): PermissionResource
     {
@@ -118,7 +116,7 @@ class PermissionController extends Controller
             $permission->syncRoles($request->validated('roles', []));
         }
 
-        return (new PermissionResource($permission->load('roles')->loadCount('users')))
+        return (new PermissionResource($permission->load('roles')))
             ->additional([
                 'success' => true,
                 'message' => 'Permission updated successfully.',
@@ -133,7 +131,7 @@ class PermissionController extends Controller
      * until restored.
      *
      * @param  Permission  $permission  The resolved Permission model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Permission $permission): JsonResponse
     {
@@ -149,7 +147,7 @@ class PermissionController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  Permission  $permission  The soft-deleted Permission model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Permission $permission): JsonResponse
     {
