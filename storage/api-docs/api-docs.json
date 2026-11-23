@@ -33,7 +33,8 @@
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "example": "User"
                         }
                     },
                     {
@@ -4543,7 +4544,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/StoreObservacionRequest"
+                                "$ref": "#/components/schemas/UpdateObservacionRequest"
                             }
                         }
                     }
@@ -4891,6 +4892,125 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "SanctumCookie": []
+                    }
+                ]
+            }
+        },
+        "/observaciones/{observacion}/comentarios": {
+            "post": {
+                "tags": [
+                    "Observaciones"
+                ],
+                "summary": "Agregar un comentario a la observacion",
+                "operationId": "6d7e8aba676d5b459384601d5f1a8b9c",
+                "parameters": [
+                    {
+                        "name": "observacion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ObservacionComentarioRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Comentario creado"
+                    },
+                    "403": {
+                        "description": "Solo el responsable del informe puede comentar"
+                    },
+                    "422": {
+                        "description": "Validacion fallida",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "SanctumCookie": []
+                    }
+                ]
+            }
+        },
+        "/observaciones/{observacion}/cerrar": {
+            "post": {
+                "tags": [
+                    "Observaciones"
+                ],
+                "summary": "Cerrar la observacion con un comentario obligatorio",
+                "operationId": "784909e49902d3f5dfe433abed3258b9",
+                "parameters": [
+                    {
+                        "name": "observacion",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ObservacionComentarioRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Observacion cerrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Observacion"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Solo el responsable del informe puede cerrar"
+                    },
+                    "422": {
+                        "description": "Validacion fallida",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationResponse"
                                 }
                             }
                         }
@@ -8979,7 +9099,7 @@
                     },
                     "subject_type": {
                         "type": "string",
-                        "example": "App\\Models\\Informe"
+                        "example": "Informe"
                     },
                     "subject_id": {
                         "type": "integer",
@@ -9606,9 +9726,25 @@
                         "type": "integer",
                         "example": 1
                     },
+                    "numero": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "titulo": {
+                        "type": "string",
+                        "example": "Corregir las conclusiones"
+                    },
                     "descripcion": {
                         "type": "string",
                         "example": "Observacion relevante sobre el informe"
+                    },
+                    "estado": {
+                        "type": "string",
+                        "example": "abierta",
+                        "enum": [
+                            "abierta",
+                            "cerrada"
+                        ]
                     },
                     "usuario_id": {
                         "type": "integer",
@@ -9617,6 +9753,16 @@
                     "informe_id": {
                         "type": "integer",
                         "example": 1
+                    },
+                    "cerrada_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "cerrada_por_id": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
                     },
                     "created_at": {
                         "type": "string",
@@ -9634,22 +9780,49 @@
             },
             "StoreObservacionRequest": {
                 "required": [
+                    "titulo",
                     "descripcion",
-                    "usuario_id",
                     "informe_id"
                 ],
                 "properties": {
+                    "titulo": {
+                        "type": "string",
+                        "example": "Corregir las conclusiones",
+                        "maxLength": 255
+                    },
                     "descripcion": {
                         "type": "string",
                         "example": "Observacion relevante"
                     },
-                    "usuario_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
                     "informe_id": {
                         "type": "integer",
                         "example": 1
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateObservacionRequest": {
+                "properties": {
+                    "titulo": {
+                        "type": "string",
+                        "example": "Conclusiones corregidas",
+                        "maxLength": 255
+                    },
+                    "descripcion": {
+                        "type": "string",
+                        "example": "Detalle actualizado de la observacion"
+                    }
+                },
+                "type": "object"
+            },
+            "ObservacionComentarioRequest": {
+                "required": [
+                    "contenido"
+                ],
+                "properties": {
+                    "contenido": {
+                        "type": "string",
+                        "example": "Se corrigieron las conclusiones del informe."
                     }
                 },
                 "type": "object"
@@ -9673,10 +9846,6 @@
                             "admin",
                             "editor"
                         ]
-                    },
-                    "users_count": {
-                        "type": "integer",
-                        "example": 3
                     },
                     "created_at": {
                         "type": "string",
