@@ -150,7 +150,7 @@ class ContractTest extends TestCase
         $data = $this->actingAs($actor)
             ->getJson('/api/v1/me')
             ->assertOk()
-            ->json('data');
+            ->json('data.user');
 
         $this->assertArrayHasKey('email_verified_at', $data);
     }

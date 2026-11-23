@@ -7,7 +7,7 @@
  * throttled by the `api` rate limiter (60 req/min). Permission checks are
  * enforced per route via the `permission:{name}` middleware.
  *
- * @see \App\Http\Controllers\Api\V1\AuthController
+ * @see AuthController
  */
 use App\Http\Controllers\Api\V1\ActivityLogController;
 use App\Http\Controllers\Api\V1\AdjuntoController;
@@ -15,8 +15,8 @@ use App\Http\Controllers\Api\V1\AmbitoController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BienController;
 use App\Http\Controllers\Api\V1\BitacoraController;
-use App\Http\Controllers\Api\V1\InstitucionController;
 use App\Http\Controllers\Api\V1\InformeController;
+use App\Http\Controllers\Api\V1\InstitucionController;
 use App\Http\Controllers\Api\V1\ObservacionController;
 use App\Http\Controllers\Api\V1\PermissionController;
 use App\Http\Controllers\Api\V1\PersonaController;
@@ -28,6 +28,14 @@ use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->as('v1.')->group(function (): void {
+    Route::post('auth/web/register', [AuthController::class, 'registerWeb'])
+        ->middleware('throttle:login')
+        ->name('auth.web.register');
+
+    Route::post('auth/mobile/register', [AuthController::class, 'registerMobile'])
+        ->middleware('throttle:login')
+        ->name('auth.mobile.register');
+
     Route::post('auth/web/login', [AuthController::class, 'loginWeb'])
         ->middleware('throttle:login')
         ->name('auth.web.login');

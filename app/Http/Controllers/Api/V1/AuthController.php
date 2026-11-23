@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Requests\Api\V1\Auth\RegisterRequest;
 use App\Http\Requests\Api\V1\Auth\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use App\Support\Http\ApiResponse;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,14 +35,66 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     /**
+     * Register a SPA user and authenticate using a web session cookie.
+     *
+     * Creates the user account, dispatches the `Registered` event, logs the
+     * user into the `web` guard, regenerates the session ID, and returns the
+     * authenticated user resource without issuing an API token.
+     *
+     * @param  RegisterRequest  $request  Validated registration payload.
+     * @return JsonResponse 201 `{success, message, data: {user: UserResource}}`.
+     */
+    public function registerWeb(RegisterRequest $request): JsonResponse
+    {
+        $user = User::create($request->validated());
+
+        event(new Registered($user));
+
+        Auth::guard('web')->login($user);
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        return ApiResponse::success([
+            'user' => new UserResource($user->loadMissing(['roles', 'permissions'])),
+        ], 'Registered successfully.', 201);
+    }
+
+    /**
+     * Register a mobile user and issue a Sanctum personal access token.
+     *
+     * Creates the user account, dispatches the `Registered` event, and returns
+     * a newly-issued personal access token plus user data.
+     *
+     * @param  RegisterRequest  $request  Validated registration payload.
+     * @return JsonResponse 201 `{success, message, data: {token: string, user: UserResource}}`.
+     */
+    public function registerMobile(RegisterRequest $request): JsonResponse
+    {
+        $user = User::create($request->validated());
+
+        event(new Registered($user));
+
+        $deviceName = $request->string('device_name', 'api-token')->value();
+        $token = $user->createToken($deviceName)->plainTextToken;
+
+        return ApiResponse::success([
+            'token' => $token,
+            'user' => new UserResource($user->loadMissing(['roles', 'permissions'])),
+        ], 'Registered successfully.', 201);
+    }
+
+    /**
      * Legacy login alias — delegates to {@see loginMobile()}.
      *
      * Preserved for backwards compatibility with older clients.
      * New integrations should use `POST /api/v1/auth/mobile/login` directly.
      *
      * @deprecated Use POST /api/v1/auth/mobile/login instead.
+     *
      * @param  LoginRequest  $request  Validated login credentials.
-     * @return JsonResponse  Same response as {@see loginMobile()}.
+     * @return JsonResponse Same response as {@see loginMobile()}.
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -58,7 +112,7 @@ class AuthController extends Controller
      * Returns 401 if the email/password combination is invalid.
      *
      * @param  LoginRequest  $request  Validated credentials (`email`, `password`, optional `device_name`).
-     * @return JsonResponse  200 `{success, message, data: {user: UserResource}}`.
+     * @return JsonResponse 200 `{success, message, data: {user: UserResource}}`.
      */
     public function loginWeb(LoginRequest $request): JsonResponse
     {
@@ -70,8 +124,11 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
+        /** @var User $user */
+        $user = $request->user()->loadMissing(['roles', 'permissions']);
+
         return ApiResponse::success([
-            'user' => new UserResource($request->user()),
+            'user' => new UserResource($user),
         ], 'Logged in successfully.');
     }
 
@@ -87,7 +144,7 @@ class AuthController extends Controller
      * Returns 401 if the email/password combination is invalid.
      *
      * @param  LoginRequest  $request  Validated credentials (`email`, `password`, optional `device_name`).
-     * @return JsonResponse  200 `{success, message, data: {token: string, user: UserResource}}`.
+     * @return JsonResponse 200 `{success, message, data: {token: string, user: UserResource}}`.
      */
     public function loginMobile(LoginRequest $request): JsonResponse
     {
@@ -96,7 +153,7 @@ class AuthController extends Controller
         }
 
         /** @var User $user */
-        $user = Auth::user();
+        $user = Auth::user()->loadMissing(['roles', 'permissions']);
         $deviceName = $request->string('device_name', 'api-token')->value();
         $token = $user->createToken($deviceName)->plainTextToken;
 
@@ -114,15 +171,16 @@ class AuthController extends Controller
      * the `email_verified_at` field (see {@see UserResource::toArray()}).
      *
      * @param  Request  $request  The current incoming request with an authenticated user.
-     * @return UserResource  200 with the current user's resource envelope.
+     * @return JsonResponse 200 `{success, message, data: {user: UserResource}}`.
      */
-    public function me(Request $request): UserResource
+    public function me(Request $request): JsonResponse
     {
-        return (new UserResource($request->user()))
-            ->additional([
-                'success' => true,
-                'message' => 'Profile retrieved successfully.',
-            ]);
+        /** @var User $user */
+        $user = $request->user()->loadMissing(['roles', 'permissions']);
+
+        return ApiResponse::success([
+            'user' => new UserResource($user),
+        ], 'Profile retrieved successfully.');
     }
 
     /**
@@ -133,19 +191,17 @@ class AuthController extends Controller
      * The new password is hashed automatically via the `hashed` cast on the model.
      *
      * @param  UpdateProfileRequest  $request  Validated payload containing the new `password`.
-     * @return UserResource  200 with the refreshed user resource (re-fetched via `fresh()`).
+     * @return JsonResponse 200 `{success, message, data: {user: UserResource}}`.
      */
-    public function updateProfile(UpdateProfileRequest $request): UserResource
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
         $user->update($request->validated());
 
-        return (new UserResource($user->fresh()))
-            ->additional([
-                'success' => true,
-                'message' => 'Profile updated successfully.',
-            ]);
+        return ApiResponse::success([
+            'user' => new UserResource($user->fresh()->loadMissing(['roles', 'permissions'])),
+        ], 'Profile updated successfully.');
     }
 
     /**
@@ -155,8 +211,9 @@ class AuthController extends Controller
      * New integrations should use `POST /api/v1/auth/mobile/logout` directly.
      *
      * @deprecated Use POST /api/v1/auth/mobile/logout instead.
+     *
      * @param  Request  $request  The current incoming request.
-     * @return JsonResponse  Same response as {@see logoutMobile()}.
+     * @return JsonResponse Same response as {@see logoutMobile()}.
      */
     public function logout(Request $request): JsonResponse
     {
@@ -172,7 +229,7 @@ class AuthController extends Controller
      * Safe to call even if no session exists.
      *
      * @param  Request  $request  The current incoming request (session-based).
-     * @return JsonResponse  200 `{success, message, data: {user: UserResource}}`.
+     * @return JsonResponse 200 `{success, message, data: {user: UserResource}}`.
      */
     public function logoutWeb(Request $request): JsonResponse
     {
@@ -201,7 +258,7 @@ class AuthController extends Controller
      * Records a logout activity log entry before revoking the token.
      *
      * @param  Request  $request  The current incoming request with a valid Sanctum token.
-     * @return JsonResponse  200 `{success, message, data: null}`.
+     * @return JsonResponse 200 `{success, message, data: null}`.
      */
     public function logoutMobile(Request $request): JsonResponse
     {
@@ -219,7 +276,7 @@ class AuthController extends Controller
      * remain complete even after the session or token has been destroyed.
      *
      * @param  Request  $request  The current incoming request (used for IP / user-agent metadata).
-     * @param  string   $guard    The name of the guard that was used: `'web'` or `'sanctum'`.
+     * @param  string  $guard  The name of the guard that was used: `'web'` or `'sanctum'`.
      */
     private function logLogout(Request $request, string $guard): void
     {

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1\User;
 
+use App\Models\Institucion;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -40,6 +41,23 @@ class IndexUserTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.roles.0', 'admin')
             ->assertJsonPath('data.0.permissions.0', 'reports.view');
+    }
+
+    public function test_index_includes_only_institucion_id_and_nombre(): void
+    {
+        $actor = $this->createAuthorizedUser(['users.view']);
+        $institucion = Institucion::factory()->create(['nombre' => 'Institución Central']);
+        User::factory()->create([
+            'email' => 'with-institucion@example.com',
+            'institucion_id' => $institucion->id,
+        ]);
+
+        $this->actingAs($actor)
+            ->getJson('/api/v1/users?include=institucion&filter[email]=with-institucion@example.com&per_page=100')
+            ->assertOk()
+            ->assertJsonPath('data.0.institucion.id', $institucion->id)
+            ->assertJsonPath('data.0.institucion.nombre', 'Institución Central')
+            ->assertJsonCount(2, 'data.0.institucion');
     }
 
     public function test_index_supports_sparse_fields_selection(): void

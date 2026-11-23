@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api\V1\Auth;
 
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
@@ -52,9 +54,50 @@ class LoginTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'message',
-                'data' => ['user' => ['id', 'name', 'email']],
+                'data' => ['user' => ['id', 'name', 'email', 'roles', 'permissions']],
             ])
             ->assertJsonMissingPath('data.token');
+    }
+
+    public function test_web_login_includes_permissions_granted_via_role(): void
+    {
+        $user = User::factory()->create();
+        $role = Role::findOrCreate('admin', 'sanctum');
+        $permission = Permission::findOrCreate('reports.view', 'sanctum');
+        $role->syncPermissions([$permission]);
+        $user->assignRole($role);
+
+        $response = $this->postJson('/api/v1/auth/web/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.user.roles.0', 'admin');
+
+        $this->assertContains('reports.view', $response->json('data.user.permissions', []));
+    }
+
+    public function test_web_login_for_super_admin_includes_all_permissions(): void
+    {
+        $user = User::factory()->create();
+        Permission::findOrCreate('users.view', 'sanctum');
+        Permission::findOrCreate('roles.view', 'sanctum');
+
+        $superAdminRole = Role::findOrCreate('super-admin', 'sanctum');
+        $user->assignRole($superAdminRole);
+
+        $response = $this->postJson('/api/v1/auth/web/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.user.roles.0', 'super-admin');
+
+        $permissions = $response->json('data.user.permissions', []);
+        $this->assertContains('users.view', $permissions);
+        $this->assertContains('roles.view', $permissions);
     }
 
     public function test_legacy_login_endpoint_remains_available_for_mobile_clients(): void
