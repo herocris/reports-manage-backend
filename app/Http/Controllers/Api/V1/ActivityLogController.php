@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ActivityLog\IndexActivityLogRequest;
 use App\Http\Resources\Api\V1\ActivityLogResource;
 use App\Models\ActivityLog;
+use App\Support\Query\Definitions\ActivityLogIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
@@ -20,21 +24,24 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class ActivityLogController extends Controller
 {
+    use AppliesIndexQuery;
+
     /**
      * Return a paginated, chronologically-descending list of all activity log entries.
      *
      * Eager-loads the `causer` relation (the {@see User} who triggered the event)
-     * and paginates at 25 entries per page. The response is not filterable or
-     * sortable beyond the default `latest()` ordering.
+     * and applies validated pagination, sorting, search, and filters.
      *
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<ActivityLogResource>>
+     * @param  IndexActivityLogRequest  $request  Validated query parameters.
+     * @return AnonymousResourceCollection<LengthAwarePaginator<ActivityLogResource>>
      */
-    public function index(): AnonymousResourceCollection
+    public function index(IndexActivityLogRequest $request): AnonymousResourceCollection
     {
-        $activities = ActivityLog::query()
-            ->with('causer')
-            ->latest()
-            ->paginate(25);
+        $activities = $this->applyIndexQuery(
+            ActivityLog::query()->with('causer'),
+            $request->validated(),
+            ActivityLogIndexDefinition::definition(),
+        );
 
         return ActivityLogResource::collection($activities)
             ->additional([

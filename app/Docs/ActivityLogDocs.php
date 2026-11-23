@@ -12,7 +12,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'log_name', type: 'string', example: 'default'),
         new OA\Property(property: 'description', type: 'string', example: 'created'),
         new OA\Property(property: 'event', type: 'string', example: 'created'),
-        new OA\Property(property: 'subject_type', type: 'string', example: 'App\\Models\\Informe'),
+        new OA\Property(property: 'subject_type', type: 'string', example: 'Informe'),
         new OA\Property(property: 'subject_id', type: 'integer', example: 1),
         new OA\Property(
             property: 'causer',
@@ -37,7 +37,7 @@ class ActivityLogDocs
         security: [['BearerAuth' => []], ['SanctumCookie' => []]],
         parameters: [
             new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'filter[subject_type]', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'filter[subject_type]', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'User')),
             new OA\Parameter(name: 'filter[subject_id]', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'filter[event]', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'sort', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: '-created_at')),
@@ -50,7 +50,5 @@ class ActivityLogDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 }

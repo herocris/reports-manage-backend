@@ -82,6 +82,97 @@ class IndexActivityLogTest extends TestCase
         $response = $this->actingAs($actor)->getJson('/api/v1/activity-logs');
 
         $response->assertOk()
-            ->assertJsonPath('meta.per_page', 25);
+            ->assertJsonPath('meta.per_page', 10);
+    }
+
+    public function test_index_supports_search_sorting_and_custom_pagination(): void
+    {
+        $actor = $this->createAuthorizedUser(['activity-log.view']);
+
+        activity()->causedBy($actor)->useLog('audit')->event('updated')->log('Zeta searchable activity');
+        activity()->causedBy($actor)->useLog('audit')->event('created')->log('Alpha searchable activity');
+
+        $this->actingAs($actor)
+            ->getJson('/api/v1/activity-logs?search=searchable&sort=description&direction=ASC&per_page=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.description', 'Alpha searchable activity')
+            ->assertJsonPath('meta.per_page', 1);
+    }
+
+    public function test_index_supports_subject_and_event_filters(): void
+    {
+        $actor = $this->createAuthorizedUser(['activity-log.view']);
+        $subject = User::factory()->create();
+
+        activity()
+            ->causedBy($actor)
+            ->performedOn($subject)
+            ->event('updated')
+            ->log('Matching activity');
+
+        activity()
+            ->causedBy($actor)
+            ->performedOn($subject)
+            ->event('created')
+            ->log('Non-matching activity');
+
+        $query = http_build_query([
+            'filter' => [
+                'subject_type' => 'User',
+                'subject_id' => $subject->id,
+                'event' => 'updated',
+            ],
+        ]);
+
+        $this->actingAs($actor)
+            ->getJson("/api/v1/activity-logs?{$query}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.description', 'Matching activity')
+            ->assertJsonPath('data.0.subject_type', 'User');
+    }
+
+    public function test_index_rejects_invalid_query_parameters(): void
+    {
+        $actor = $this->createAuthorizedUser(['activity-log.view']);
+
+        $this->actingAs($actor)
+            ->getJson('/api/v1/activity-logs?page=0&per_page=101&sort=invalid&direction=sideways&filter[subject_id]=invalid')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'page',
+                'per_page',
+                'sort',
+                'direction',
+                'filter.subject_id',
+            ]);
+    }
+
+    public function test_unknown_subject_type_returns_an_empty_list(): void
+    {
+        $actor = $this->createAuthorizedUser(['activity-log.view']);
+
+        activity()
+            ->causedBy($actor)
+            ->performedOn($actor)
+            ->event('updated')
+            ->log('Existing user activity');
+
+        $this->actingAs($actor)
+            ->getJson('/api/v1/activity-logs?filter[subject_type]=Us')
+            ->assertOk()
+            ->assertJsonCount(0, 'data')
+            ->assertJsonPath('meta.total', 0);
+
+        $query = http_build_query([
+            'filter' => ['subject_type' => User::class],
+        ]);
+
+        $this->actingAs($actor)
+            ->getJson("/api/v1/activity-logs?{$query}")
+            ->assertOk()
+            ->assertJsonCount(0, 'data')
+            ->assertJsonPath('meta.total', 0);
     }
 }
