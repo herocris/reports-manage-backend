@@ -15,6 +15,8 @@ use App\Support\Query\Definitions\PersonaIndexDefinition;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Handles CRUD operations for Persona records.
@@ -65,12 +67,10 @@ class PersonaController extends Controller
     public function store(StorePersonaRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        // $informe = Informe::query()->findOrFail($validated['informe_id']);
-
-        // unset($validated['informe_id']);
-
-        $persona = Persona::create($validated);
-        // $informe->personas()->attach($persona->id);
+        $persona = DB::transaction(fn (): Persona => Informe::query()
+            ->findOrFail($validated['informe_id'])
+            ->personas()
+            ->create(Arr::except($validated, ['informe_id'])));
 
         return (new PersonaResource($persona))
             ->additional([

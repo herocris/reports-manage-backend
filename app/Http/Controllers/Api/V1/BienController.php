@@ -15,6 +15,8 @@ use App\Support\Query\Definitions\BienIndexDefinition;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Handles CRUD operations for Bien (asset) records.
@@ -65,12 +67,10 @@ class BienController extends Controller
     public function store(StoreBienRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        // $informe = Informe::query()->findOrFail($validated['informe_id']);
-
-        // unset($validated['informe_id']);
-
-        $bien = Bien::create($validated);
-        // $informe->bienes()->attach($bien->id);
+        $bien = DB::transaction(fn (): Bien => Informe::query()
+            ->findOrFail($validated['informe_id'])
+            ->bienes()
+            ->create(Arr::except($validated, ['informe_id'])));
 
         return (new BienResource($bien))
             ->additional([
