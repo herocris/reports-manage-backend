@@ -2,36 +2,42 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
-/**
- * Creates the initial super-admin user and assigns the super-admin role.
- */
 class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminUser = User::query()->firstOrCreate(
-            ['email' => 'admin@example.com'],
-            [
-                'name' => 'Administrator',
-                'password' => Hash::make('password'),
-            ],
-        );
+        $email = config('auth.initial_admin.email');
+        $password = config('auth.initial_admin.password');
 
-        $adminUser->syncRoles(['super-admin']);
+        if (blank($email) && blank($password)) {
+            return;
+        }
 
-        $testUser = User::query()->firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => Hash::make('password'),
-            ],
-        );
+        Validator::make(['email' => $email, 'password' => $password], [
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:16'],
+        ])->validate();
 
-        $testUser->syncRoles(['user']);
+        DB::transaction(function () use ($email, $password): void {
+            $existing = User::withTrashed()->where('email', $email)->lockForUpdate()->first();
+            if ($existing !== null) {
+                if ($existing->trashed() || ! $existing->hasRole('super-admin')) {
+                    throw ValidationException::withMessages([
+                        'email' => ['The initial administrator email is already in use.'],
+                    ]);
+                }
+
+                return;
+            }
+
+            $adminUser = User::query()->create(['email' => $email, 'name' => 'Administrator', 'password' => $password]);
+            $adminUser->syncRoles(['super-admin']);
+        });
     }
 }

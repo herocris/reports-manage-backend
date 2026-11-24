@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\ActivityLog;
 use Spatie\Activitylog\Actions\CleanActivityLogAction;
 use Spatie\Activitylog\Actions\LogActivityAction;
-use App\Models\ActivityLog;
 
 return [
 
@@ -46,7 +46,7 @@ return [
      * These attributes will be excluded from logging for all models.
      * Model-specific exclusions via logExcept() are merged with these.
      */
-    'default_except_attributes' => [],
+    'default_except_attributes' => ['password', 'password_confirmation', 'current_password', 'remember_token'],
 
     /*
      * When enabled, activities are buffered in memory and inserted in a

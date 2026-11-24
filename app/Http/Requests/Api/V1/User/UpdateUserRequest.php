@@ -18,7 +18,7 @@ class UpdateUserRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:user.update` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -43,7 +43,7 @@ class UpdateUserRequest extends FormRequest
             'password' => ['sometimes', 'string', Password::defaults()],
             'institucion_id' => ['sometimes', 'integer', 'exists:institucions,id'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', 'exists:roles,name'],
+            'roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'sanctum')->whereNull('deleted_at')],
         ];
     }
 }

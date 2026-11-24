@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\V1\User;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -17,7 +18,7 @@ class StoreUserRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:user.create` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -42,7 +43,7 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'string', Password::defaults()],
             'institucion_id' => ['required', 'integer', 'exists:institucions,id'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', 'exists:roles,name'],
+            'roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'sanctum')->whereNull('deleted_at')],
         ];
     }
 }

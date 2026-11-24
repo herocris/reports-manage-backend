@@ -32,6 +32,7 @@ class ShowUpdateDestroyPermissionTest extends TestCase
         $actor = $this->createAuthorizedUser(['permissions.update']);
         $permission = Permission::create(['name' => 'reports.export', 'guard_name' => 'sanctum']);
         Role::create(['name' => 'admin', 'guard_name' => 'sanctum']);
+        $actor->givePermissionTo($permission);
 
         $response = $this->actingAs($actor)->putJson("/api/v1/permissions/{$permission->id}", [
             'name' => 'reports.download',

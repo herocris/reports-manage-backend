@@ -9,10 +9,14 @@ use App\Http\Requests\Api\V1\User\StoreUserRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
+use App\Support\Authorization\AccessControl;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\UserIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Handles CRUD operations for User accounts, including role synchronization.
@@ -29,6 +33,8 @@ class UserController extends Controller
 {
     use AppliesIndexQuery;
 
+    public function __construct(private AccessControl $accessControl) {}
+
     /**
      * Return a paginated, filterable list of users.
      *
@@ -38,7 +44,7 @@ class UserController extends Controller
      * field selection, pagination, and `only_trashed` soft-delete scope.
      *
      * @param  IndexUserRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<UserResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<UserResource>>
      */
     public function index(IndexUserRequest $request): AnonymousResourceCollection
     {
@@ -64,16 +70,23 @@ class UserController extends Controller
      * loads `roles` and `permissions` on the returned resource.
      *
      * @param  StoreUserRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see UserResource} envelope.
+     * @return JsonResponse 201 with the created {@see UserResource} envelope.
      */
     public function store(StoreUserRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $user = User::create($validated);
-
-        if ($validated['roles'] ?? null) {
-            $user->syncRoles($validated['roles']);
+        if (array_key_exists('roles', $validated)) {
+            $this->accessControl->authorizeRoleAssignment($request->user(), $validated['roles']);
         }
+
+        $user = DB::transaction(function () use ($validated): User {
+            $user = User::create(collect($validated)->except('roles')->all());
+            if (array_key_exists('roles', $validated)) {
+                $user->syncRoles($validated['roles']);
+            }
+
+            return $user;
+        });
 
         return (new UserResource($user->load('roles', 'permissions')))
             ->additional([
@@ -92,7 +105,7 @@ class UserController extends Controller
      * is redacted unless the requester is the owner or has `user.view` permission.
      *
      * @param  User  $user  The resolved User model instance.
-     * @return UserResource  200 with the resource envelope.
+     * @return UserResource 200 with the resource envelope.
      */
     public function show(User $user): UserResource
     {
@@ -112,17 +125,24 @@ class UserController extends Controller
      * loaded `roles` and `permissions` to reflect any changes.
      *
      * @param  UpdateUserRequest  $request  Validated update payload.
-     * @param  User               $user     The resolved User model instance.
-     * @return UserResource  200 with the updated resource envelope.
+     * @param  User  $user  The resolved User model instance.
+     * @return UserResource 200 with the updated resource envelope.
      */
     public function update(UpdateUserRequest $request, User $user): UserResource
     {
         $validated = $request->validated();
-        $user->update($validated);
+        $this->accessControl->authorizeUser($request->user(), $user);
 
         if (array_key_exists('roles', $validated)) {
-            $user->syncRoles($validated['roles']);
+            $this->accessControl->authorizeRoleAssignment($request->user(), $validated['roles']);
         }
+
+        DB::transaction(function () use ($user, $validated): void {
+            $user->update(collect($validated)->except('roles')->all());
+            if (array_key_exists('roles', $validated)) {
+                $user->syncRoles($validated['roles']);
+            }
+        });
 
         return (new UserResource($user->load('roles', 'permissions')))
             ->additional([
@@ -140,10 +160,11 @@ class UserController extends Controller
      * `EnsureEmailIsVerified` and auth middleware reject deleted users).
      *
      * @param  User  $user  The resolved User model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
+        $this->accessControl->authorizeUser($request->user(), $user);
         $user->delete();
 
         return ApiResponse::success(null, 'User deleted successfully.');
@@ -157,10 +178,11 @@ class UserController extends Controller
      * intact and will be effective immediately after restore.
      *
      * @param  User  $user  The soft-deleted User model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function restore(User $user): JsonResponse
+    public function restore(Request $request, User $user): JsonResponse
     {
+        $this->accessControl->authorizeUser($request->user(), $user);
         $user->restore();
 
         return ApiResponse::success(null, 'User restored successfully.');

@@ -9,11 +9,15 @@ use App\Http\Requests\Api\V1\Permission\StorePermissionRequest;
 use App\Http\Requests\Api\V1\Permission\UpdatePermissionRequest;
 use App\Http\Resources\Api\V1\PermissionResource;
 use App\Models\Permission;
+use App\Support\Authorization\AccessControl;
+use App\Support\Authorization\PermissionCatalog;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\PermissionIndexDefinition;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Handles CRUD operations for Permission records (Spatie Permission, guard `sanctum`).
@@ -29,6 +33,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class PermissionController extends Controller
 {
     use AppliesIndexQuery;
+
+    public function __construct(private AccessControl $accessControl) {}
 
     /**
      * Return a paginated, filterable list of permissions.
@@ -62,12 +68,22 @@ class PermissionController extends Controller
      */
     public function store(StorePermissionRequest $request): JsonResponse
     {
-        $permission = Permission::create([
-            'name' => $request->validated('name'),
-            'guard_name' => 'sanctum',
-        ]);
+        abort_if(PermissionCatalog::contains($request->validated('name')), 403);
+        $roles = $request->validated('roles', []);
+        if ($roles !== []) {
+            $this->accessControl->authorizePermissions($request->user(), PermissionCatalog::names());
+            $this->accessControl->authorizeRoles($request->user(), $roles);
+        }
 
-        $permission->syncRoles($request->validated('roles', []));
+        $permission = DB::transaction(function () use ($request, $roles): Permission {
+            $permission = Permission::create([
+                'name' => $request->validated('name'),
+                'guard_name' => 'sanctum',
+            ]);
+            $permission->syncRoles($roles);
+
+            return $permission;
+        });
 
         return (new PermissionResource($permission->load('roles')))
             ->additional([
@@ -108,13 +124,23 @@ class PermissionController extends Controller
      */
     public function update(UpdatePermissionRequest $request, Permission $permission): PermissionResource
     {
-        $permission->update([
-            'name' => $request->validated('name', $permission->name),
-        ]);
-
+        $name = $request->validated('name', $permission->name);
+        abort_if($name !== $permission->name && (PermissionCatalog::contains($permission->name) || PermissionCatalog::contains($name)), 403);
+        $this->accessControl->authorizePermissionTargets($request->user(), $permission);
         if ($request->has('roles')) {
-            $permission->syncRoles($request->validated('roles', []));
+            $this->accessControl->authorizePermissions($request->user(), [$permission->name]);
+            $this->accessControl->authorizeRoles($request->user(), array_merge(
+                $permission->roles()->pluck('name')->all(),
+                $request->validated('roles', []),
+            ));
         }
+
+        DB::transaction(function () use ($request, $permission, $name): void {
+            $permission->update(['name' => $name]);
+            if ($request->has('roles')) {
+                $permission->syncRoles($request->validated('roles', []));
+            }
+        });
 
         return (new PermissionResource($permission->load('roles')))
             ->additional([
@@ -133,8 +159,11 @@ class PermissionController extends Controller
      * @param  Permission  $permission  The resolved Permission model instance.
      * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function destroy(Permission $permission): JsonResponse
+    public function destroy(Request $request, Permission $permission): JsonResponse
     {
+        abort_if(PermissionCatalog::contains($permission->name), 403);
+        $this->accessControl->authorizePermissionTargets($request->user(), $permission);
+        $this->accessControl->authorizeRoles($request->user(), $permission->roles()->pluck('name')->all());
         $permission->delete();
 
         return ApiResponse::success(null, 'Permission deleted successfully.');
@@ -149,8 +178,13 @@ class PermissionController extends Controller
      * @param  Permission  $permission  The soft-deleted Permission model instance to restore.
      * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function restore(Permission $permission): JsonResponse
+    public function restore(Request $request, Permission $permission): JsonResponse
     {
+        $this->accessControl->authorizePermissionTargets($request->user(), $permission);
+        if ($permission->roles()->exists() || $permission->users()->exists()) {
+            $this->accessControl->authorizePermissions($request->user(), PermissionCatalog::names());
+        }
+        $this->accessControl->authorizeRoles($request->user(), $permission->roles()->pluck('name')->all());
         $permission->restore();
 
         return ApiResponse::success(null, 'Permission restored successfully.');

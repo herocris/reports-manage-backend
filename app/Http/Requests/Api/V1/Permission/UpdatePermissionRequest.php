@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Api\V1\Permission;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +14,7 @@ class UpdatePermissionRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:permission.update` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -41,7 +40,7 @@ class UpdatePermissionRequest extends FormRequest
                 Rule::unique('permissions', 'name')->ignore($this->route('permission')),
             ],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', 'exists:roles,name'],
+            'roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'sanctum')->whereNull('deleted_at')],
         ];
     }
 }

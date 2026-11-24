@@ -9,10 +9,14 @@ use App\Http\Requests\Api\V1\Role\StoreRoleRequest;
 use App\Http\Requests\Api\V1\Role\UpdateRoleRequest;
 use App\Http\Resources\Api\V1\RoleResource;
 use App\Models\Role;
+use App\Support\Authorization\AccessControl;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\RoleIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Handles CRUD operations for Role records (Spatie Permission, guard `sanctum`).
@@ -28,6 +32,8 @@ class RoleController extends Controller
 {
     use AppliesIndexQuery;
 
+    public function __construct(private AccessControl $accessControl) {}
+
     /**
      * Return a paginated, filterable list of roles.
      *
@@ -35,7 +41,7 @@ class RoleController extends Controller
      * assigned to each role is available in the response.
      *
      * @param  IndexRoleRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<RoleResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<RoleResource>>
      */
     public function index(IndexRoleRequest $request): AnonymousResourceCollection
     {
@@ -60,16 +66,20 @@ class RoleController extends Controller
      * existing permission assignments on the new role.
      *
      * @param  StoreRoleRequest  $request  Validated creation payload (`name`, optional `permissions[]`).
-     * @return JsonResponse  201 with the created {@see RoleResource} envelope including `permissions` and `users_count`.
+     * @return JsonResponse 201 with the created {@see RoleResource} envelope including `permissions` and `users_count`.
      */
     public function store(StoreRoleRequest $request): JsonResponse
     {
-        $role = Role::create([
-            'name' => $request->validated('name'),
-            'guard_name' => 'sanctum',
-        ]);
+        $this->accessControl->authorizePermissions($request->user(), $request->validated('permissions', []));
+        $role = DB::transaction(function () use ($request): Role {
+            $role = Role::create([
+                'name' => $request->validated('name'),
+                'guard_name' => 'sanctum',
+            ]);
+            $role->syncPermissions($request->validated('permissions', []));
 
-        $role->syncPermissions($request->validated('permissions', []));
+            return $role;
+        });
 
         return (new RoleResource($role->load('permissions')->loadCount('users')))
             ->additional([
@@ -86,7 +96,7 @@ class RoleController extends Controller
      * Eager-loads `permissions` and the `users_count` aggregate.
      *
      * @param  Role  $role  The resolved Role model instance.
-     * @return RoleResource  200 with the resource envelope.
+     * @return RoleResource 200 with the resource envelope.
      */
     public function show(Role $role): RoleResource
     {
@@ -105,18 +115,19 @@ class RoleController extends Controller
      * replaced; omitting `permissions` leaves existing assignments unchanged.
      *
      * @param  UpdateRoleRequest  $request  Validated update payload.
-     * @param  Role               $role     The resolved Role model instance.
-     * @return RoleResource  200 with the updated resource envelope.
+     * @param  Role  $role  The resolved Role model instance.
+     * @return RoleResource 200 with the updated resource envelope.
      */
     public function update(UpdateRoleRequest $request, Role $role): RoleResource
     {
-        $role->update([
-            'name' => $request->validated('name', $role->name),
-        ]);
-
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->validated('permissions', []));
-        }
+        $this->accessControl->authorizeRole($request->user(), $role);
+        $this->accessControl->authorizePermissions($request->user(), $request->validated('permissions', []));
+        DB::transaction(function () use ($request, $role): void {
+            $role->update(['name' => $request->validated('name', $role->name)]);
+            if ($request->has('permissions')) {
+                $role->syncPermissions($request->validated('permissions', []));
+            }
+        });
 
         return (new RoleResource($role->load('permissions')->loadCount('users')))
             ->additional([
@@ -132,10 +143,11 @@ class RoleController extends Controller
      * assignment but the role will not resolve in permission checks until restored.
      *
      * @param  Role  $role  The resolved Role model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function destroy(Role $role): JsonResponse
+    public function destroy(Request $request, Role $role): JsonResponse
     {
+        $this->accessControl->authorizeRole($request->user(), $role);
         $role->delete();
 
         return ApiResponse::success(null, 'Role deleted successfully.');
@@ -148,10 +160,11 @@ class RoleController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  Role  $role  The soft-deleted Role model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function restore(Role $role): JsonResponse
+    public function restore(Request $request, Role $role): JsonResponse
     {
+        $this->accessControl->authorizeRole($request->user(), $role);
         $role->restore();
 
         return ApiResponse::success(null, 'Role restored successfully.');

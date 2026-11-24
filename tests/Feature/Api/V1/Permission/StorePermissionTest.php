@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\V1\Permission;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\Authorization\PermissionCatalog;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\Concerns\CreatesAuthorizedUser;
 use Tests\TestCase;
@@ -17,7 +18,7 @@ class StorePermissionTest extends TestCase
 
     public function test_authenticated_user_can_create_a_permission_with_roles(): void
     {
-        $actor = $this->createAuthorizedUser(['permissions.create']);
+        $actor = $this->createAuthorizedUser(PermissionCatalog::names());
         Role::create(['name' => 'admin', 'guard_name' => 'sanctum']);
 
         $response = $this->actingAs($actor)->postJson('/api/v1/permissions', [

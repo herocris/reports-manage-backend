@@ -34,6 +34,7 @@ class ShowUpdateDestroyRoleTest extends TestCase
         $actor = $this->createAuthorizedUser(['roles.update']);
         $role = Role::create(['name' => 'admin', 'guard_name' => self::GUARD_NAME]);
         Permission::create(['name' => 'roles.view', 'guard_name' => self::GUARD_NAME]);
+        $actor->givePermissionTo('roles.view');
 
         $response = $this->actingAs($actor)->putJson("/api/v1/roles/{$role->id}", [
             'name' => 'super-admin',

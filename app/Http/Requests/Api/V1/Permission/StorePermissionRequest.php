@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Api\V1\Permission;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Validates input for creating a new permission.
@@ -14,7 +14,7 @@ class StorePermissionRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:permission.create` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -35,7 +35,7 @@ class StorePermissionRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255', 'unique:permissions,name'],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['string', 'exists:roles,name'],
+            'roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'sanctum')->whereNull('deleted_at')],
         ];
     }
 }

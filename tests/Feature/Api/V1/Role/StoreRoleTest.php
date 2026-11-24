@@ -22,6 +22,7 @@ class StoreRoleTest extends TestCase
         $actor = $this->createAuthorizedUser(['roles.create']);
         Permission::create(['name' => 'users.view', 'guard_name' => self::GUARD_NAME]);
         Permission::create(['name' => 'users.create', 'guard_name' => self::GUARD_NAME]);
+        $actor->givePermissionTo(['users.view', 'users.create']);
 
         $response = $this->actingAs($actor)->postJson('/api/v1/roles', [
             'name' => 'admin',
