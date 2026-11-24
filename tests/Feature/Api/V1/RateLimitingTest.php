@@ -59,12 +59,29 @@ class RateLimitingTest extends TestCase
             ]);
     }
 
+    public function test_login_rate_limiting_normalizes_email_case(): void
+    {
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $email = $attempt % 2 === 0 ? 'Case@example.com' : 'case@example.com';
+
+            $this->postJson('/api/v1/login', [
+                'email' => $email,
+                'password' => 'incorrect',
+            ])->assertUnauthorized();
+        }
+
+        $this->postJson('/api/v1/login', [
+            'email' => 'CASE@example.com',
+            'password' => 'incorrect',
+        ])->assertTooManyRequests()->assertHeader('Retry-After');
+    }
+
     public function test_api_rate_limiting_uses_ip_for_unauthenticated_users(): void
     {
-        // Note: Throttle is applied after auth:sanctum middleware, so unauthenticated 
+        // Note: Throttle is applied after auth:sanctum middleware, so unauthenticated
         // requests will receive 401 before hitting rate limit. This test verifies
         // that authenticated users are rate limited by their ID per the policy.
-        
+
         // Instead, test that different users have separate rate limits
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();

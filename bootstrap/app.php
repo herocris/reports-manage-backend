@@ -1,22 +1,23 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-use Spatie\Permission\Middleware\PermissionMiddleware;
-use Spatie\Permission\Middleware\RoleMiddleware;
-use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use App\Support\Http\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Exceptions\UnauthorizedException as SpatieUnauthorizedException;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -37,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $isApiRequest = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
 
-        $exceptions->shouldRenderJsonWhen(fn (Request $request, \Throwable $e): bool => $isApiRequest($request));
+        $exceptions->shouldRenderJsonWhen(fn (Request $request, Throwable $e): bool => $isApiRequest($request));
 
         $exceptions->render(function (ValidationException $exception, Request $request) use ($isApiRequest) {
             if (! $isApiRequest($request)) {
@@ -71,23 +72,27 @@ return Application::configure(basePath: dirname(__DIR__))
             return ApiResponse::error('Resource not found.', 404);
         });
 
-        $exceptions->render(function (MethodNotAllowedHttpException $exception, Request $request) use ($isApiRequest) {
+        $exceptions->render(function (HttpExceptionInterface $exception, Request $request) use ($isApiRequest) {
             if (! $isApiRequest($request)) {
                 return null;
             }
 
-            return ApiResponse::error('Method not allowed.', 405);
+            $status = $exception->getStatusCode();
+            $message = match ($status) {
+                405 => 'Method not allowed.',
+                419 => 'CSRF token mismatch.',
+                429 => 'Too many requests. Please try again later.',
+                default => $status >= 500 ? 'Server error.' : (Response::$statusTexts[$status] ?? 'Request failed.'),
+            };
+
+            return ApiResponse::error($message, $status)->withHeaders($exception->getHeaders());
         });
 
-        $exceptions->render(function (TooManyRequestsHttpException $exception, Request $request) use ($isApiRequest) {
-            if (! $isApiRequest($request)) {
-                return null;
+        $exceptions->render(function (Throwable $exception, Request $request) use ($isApiRequest) {
+            if ($exception instanceof HttpResponseException) {
+                return $exception->getResponse();
             }
 
-            return ApiResponse::error('Too many requests. Please try again later.', 429);
-        });
-
-        $exceptions->render(function (\Throwable $exception, Request $request) use ($isApiRequest) {
             if (! $isApiRequest($request)) {
                 return null;
             }

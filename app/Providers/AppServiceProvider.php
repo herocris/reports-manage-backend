@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 /**
  * Core application service provider.
@@ -25,7 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
+        }
     }
 
     /**
@@ -33,9 +37,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Model::preventLazyLoading(! $this->app->isProduction());
+
         // Rate limiting for login endpoint: 5 attempts per minute per email
-        RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by($request->input('email', $request->ip()));
+        RateLimiter::for('login', function (Request $request): Limit {
+            return Limit::perMinute(5)->by(Str::lower(trim((string) $request->input('email', $request->ip()))));
         });
 
         // Rate limiting for API: 60 requests per minute per authenticated user or IP
