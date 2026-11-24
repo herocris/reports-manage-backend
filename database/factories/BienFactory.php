@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Bien;
+use App\Models\TipoBien;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,7 +20,7 @@ class BienFactory extends Factory
     {
         return [
             'descripcion' => fake()->sentence(),
-            'tipobien_id' => \App\Models\TipoBien::factory(),
+            'tipobien_id' => TipoBien::factory(),
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\V1\Producto;
 
 use App\Models\Informe;
 use App\Models\Producto;
+use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\Concerns\CreatesAuthorizedUser;
 use Tests\TestCase;
@@ -113,7 +114,7 @@ class IndexProductoTest extends TestCase
         Informe::factory()->for($producto, 'producto')->create();
 
         $response = $this->actingAs($actor)
-            ->getJson('/api/v1/productos?include=informes&filter[nombre]=' . urlencode($producto->nombre) . '&per_page=100');
+            ->getJson('/api/v1/productos?include=informes&filter[nombre]='.urlencode($producto->nombre).'&per_page=100');
 
         $response->assertOk()
             ->assertJsonStructure(['data' => [['informes']]])
@@ -148,7 +149,7 @@ class IndexProductoTest extends TestCase
 
     public function test_unauthenticated_or_forbidden_user_cannot_manage_productos(): void
     {
-        $actor = \App\Models\User::factory()->create();
+        $actor = User::factory()->create();
 
         $this->getJson('/api/v1/productos')->assertUnauthorized();
         $this->actingAs($actor)->getJson('/api/v1/productos')->assertForbidden();

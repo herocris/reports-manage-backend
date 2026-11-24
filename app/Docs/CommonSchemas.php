@@ -84,6 +84,4 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'errors', nullable: true),
     ]
 )]
-class CommonSchemas
-{
-}
+class CommonSchemas {}

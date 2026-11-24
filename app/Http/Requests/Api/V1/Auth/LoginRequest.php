@@ -16,7 +16,7 @@ class LoginRequest extends FormRequest
      * All unauthenticated users are allowed to submit login credentials.
      * There is no permission middleware on the login route.
      *
-     * @return bool  Always true — the login endpoint is publicly accessible.
+     * @return bool Always true — the login endpoint is publicly accessible.
      */
     public function authorize(): bool
     {

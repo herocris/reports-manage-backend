@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\BitacoraResource;
 use App\Models\Bitacora;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\BitacoraIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -35,7 +36,7 @@ class BitacoraController extends Controller
      * pagination, and an `only_trashed` soft-delete scope.
      *
      * @param  IndexBitacoraRequest  $request  Validated query parameters from the request.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<BitacoraResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<BitacoraResource>>
      */
     public function index(IndexBitacoraRequest $request): AnonymousResourceCollection
     {
@@ -58,7 +59,7 @@ class BitacoraController extends Controller
      * `informe_id`. The informe must exist and must not be soft-deleted.
      *
      * @param  StoreBitacoraRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see BitacoraResource} envelope.
+     * @return JsonResponse 201 with the created {@see BitacoraResource} envelope.
      */
     public function store(StoreBitacoraRequest $request): JsonResponse
     {
@@ -80,7 +81,7 @@ class BitacoraController extends Controller
      * does not exist or is soft-deleted, Laravel automatically returns 404.
      *
      * @param  Bitacora  $bitacora  The resolved Bitacora model instance.
-     * @return BitacoraResource  200 with the resource envelope.
+     * @return BitacoraResource 200 with the resource envelope.
      */
     public function show(Bitacora $bitacora): BitacoraResource
     {
@@ -96,9 +97,9 @@ class BitacoraController extends Controller
      * Only the fields present in the validated payload are updated;
      * omitted fields retain their current values.
      *
-     * @param  UpdateBitacoraRequest  $request   Validated update payload.
-     * @param  Bitacora               $bitacora  The resolved Bitacora model instance.
-     * @return BitacoraResource  200 with the updated resource envelope.
+     * @param  UpdateBitacoraRequest  $request  Validated update payload.
+     * @param  Bitacora  $bitacora  The resolved Bitacora model instance.
+     * @return BitacoraResource 200 with the updated resource envelope.
      */
     public function update(UpdateBitacoraRequest $request, Bitacora $bitacora): BitacoraResource
     {
@@ -117,7 +118,7 @@ class BitacoraController extends Controller
      * with {@see restore()}. Physical deletion never occurs through this endpoint.
      *
      * @param  Bitacora  $bitacora  The resolved Bitacora model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Bitacora $bitacora): JsonResponse
     {
@@ -134,7 +135,7 @@ class BitacoraController extends Controller
      * via `withTrashed` binding registered in `AppServiceProvider`.
      *
      * @param  Bitacora  $bitacora  The soft-deleted Bitacora model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Bitacora $bitacora): JsonResponse
     {

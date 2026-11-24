@@ -13,7 +13,7 @@ class UpdateProductoRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:producto.update` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {

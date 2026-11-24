@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Bitacora;
+use App\Models\Informe;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +21,7 @@ class BitacoraFactory extends Factory
         return [
             'descripcion' => fake()->paragraph(),
             'fecha' => fake()->date(),
-            'informe_id' => \App\Models\Informe::factory(),
+            'informe_id' => Informe::factory(),
         ];
     }
 }

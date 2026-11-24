@@ -21,8 +21,8 @@ class StoreBitacoraTest extends TestCase
 
         $this->actingAs($actor)->postJson('/api/v1/bitacoras', [
             'descripcion' => 'Entrada de bitácora.',
-            'fecha'       => '2025-03-15',
-            'informe_id'  => $informe->id,
+            'fecha' => '2025-03-15',
+            'informe_id' => $informe->id,
         ])->assertCreated()->assertJsonFragment(['descripcion' => 'Entrada de bitácora.']);
     }
 

@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Informe;
+use App\Models\Producto;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,13 +23,12 @@ class InformeFactory extends Factory
         $digits = fake()->numerify('###');
 
         return [
-            'expediente' => 'EXP-' . $letters . $digits,
+            'expediente' => 'EXP-'.$letters.$digits,
             'titulo' => fake()->sentence(4),
-            'producto_id' => \App\Models\Producto::factory(),
+            'producto_id' => Producto::factory(),
             'fecha_inicio' => fake()->date(),
             'fecha_final' => fake()->dateTimeBetween('+1 month', '+1 year')->format('Y-m-d'),
-            'usuariocreador_id' => \App\Models\User::factory(),
+            'usuariocreador_id' => User::factory(),
         ];
     }
 }
-

@@ -12,6 +12,7 @@ use App\Models\Informe;
 use App\Models\Ubicacion;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\UbicacionIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -35,7 +36,7 @@ class UbicacionController extends Controller
      * includes, field selection, pagination, and `only_trashed` soft-delete scope.
      *
      * @param  IndexUbicacionRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<UbicacionResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<UbicacionResource>>
      */
     public function index(IndexUbicacionRequest $request): AnonymousResourceCollection
     {
@@ -60,7 +61,7 @@ class UbicacionController extends Controller
      * the ubicacion's own attributes before creation.
      *
      * @param  StoreUbicacionRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see UbicacionResource} envelope.
+     * @return JsonResponse 201 with the created {@see UbicacionResource} envelope.
      */
     public function store(StoreUbicacionRequest $request): JsonResponse
     {
@@ -84,7 +85,7 @@ class UbicacionController extends Controller
      * Return a single ubicacion by its primary key.
      *
      * @param  Ubicacion  $ubicacion  The resolved Ubicacion model instance.
-     * @return UbicacionResource  200 with the resource envelope.
+     * @return UbicacionResource 200 with the resource envelope.
      */
     public function show(Ubicacion $ubicacion): UbicacionResource
     {
@@ -97,9 +98,9 @@ class UbicacionController extends Controller
     /**
      * Apply a partial or full update to the given ubicacion.
      *
-     * @param  UpdateUbicacionRequest  $request   Validated update payload.
-     * @param  Ubicacion               $ubicacion  The resolved Ubicacion model instance.
-     * @return UbicacionResource  200 with the updated resource envelope.
+     * @param  UpdateUbicacionRequest  $request  Validated update payload.
+     * @param  Ubicacion  $ubicacion  The resolved Ubicacion model instance.
+     * @return UbicacionResource 200 with the updated resource envelope.
      */
     public function update(UpdateUbicacionRequest $request, Ubicacion $ubicacion): UbicacionResource
     {
@@ -117,7 +118,7 @@ class UbicacionController extends Controller
      * Sets `deleted_at`; the record can be recovered via {@see restore()}.
      *
      * @param  Ubicacion  $ubicacion  The resolved Ubicacion model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Ubicacion $ubicacion): JsonResponse
     {
@@ -133,7 +134,7 @@ class UbicacionController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  Ubicacion  $ubicacion  The soft-deleted Ubicacion model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Ubicacion $ubicacion): JsonResponse
     {

@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\TipoBienResource;
 use App\Models\TipoBien;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\TipoBienIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -33,7 +34,7 @@ class TipoBienController extends Controller
      * includes, field selection, pagination, and `only_trashed` soft-delete scope.
      *
      * @param  IndexTipoBienRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<TipoBienResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<TipoBienResource>>
      */
     public function index(IndexTipoBienRequest $request): AnonymousResourceCollection
     {
@@ -53,7 +54,7 @@ class TipoBienController extends Controller
      * Persist a new tipo de bien record.
      *
      * @param  StoreTipoBienRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see TipoBienResource} envelope.
+     * @return JsonResponse 201 with the created {@see TipoBienResource} envelope.
      */
     public function store(StoreTipoBienRequest $request): JsonResponse
     {
@@ -72,7 +73,7 @@ class TipoBienController extends Controller
      * Return a single tipo de bien by its primary key.
      *
      * @param  TipoBien  $tipoBien  The resolved TipoBien model instance.
-     * @return TipoBienResource  200 with the resource envelope.
+     * @return TipoBienResource 200 with the resource envelope.
      */
     public function show(TipoBien $tipoBien): TipoBienResource
     {
@@ -86,8 +87,8 @@ class TipoBienController extends Controller
      * Apply a partial or full update to the given tipo de bien.
      *
      * @param  UpdateTipoBienRequest  $request  Validated update payload.
-     * @param  TipoBien               $tipoBien  The resolved TipoBien model instance.
-     * @return TipoBienResource  200 with the updated resource envelope.
+     * @param  TipoBien  $tipoBien  The resolved TipoBien model instance.
+     * @return TipoBienResource 200 with the updated resource envelope.
      */
     public function update(UpdateTipoBienRequest $request, TipoBien $tipoBien): TipoBienResource
     {
@@ -105,7 +106,7 @@ class TipoBienController extends Controller
      * Sets `deleted_at`; the record can be recovered via {@see restore()}.
      *
      * @param  TipoBien  $tipoBien  The resolved TipoBien model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(TipoBien $tipoBien): JsonResponse
     {
@@ -113,6 +114,7 @@ class TipoBienController extends Controller
 
         return ApiResponse::success(null, 'Tipo de bien deleted successfully.');
     }
+
     /**
      * Restore a soft-deleted tipo de bien.
      *
@@ -120,11 +122,12 @@ class TipoBienController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  TipoBien  $tipoBien  The soft-deleted TipoBien model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(TipoBien $tipoBien): JsonResponse
     {
         $tipoBien->restore();
 
         return ApiResponse::success(null, 'TipoBien restored successfully.');
-    }}
+    }
+}

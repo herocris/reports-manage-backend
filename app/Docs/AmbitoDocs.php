@@ -43,9 +43,7 @@ class AmbitoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     #[OA\Post(
         path: '/ambitos',
@@ -65,9 +63,7 @@ class AmbitoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function store(): void
-    {
-    }
+    public function store(): void {}
 
     #[OA\Get(
         path: '/ambitos/{ambito}',
@@ -86,9 +82,7 @@ class AmbitoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function show(): void
-    {
-    }
+    public function show(): void {}
 
     #[OA\Put(
         path: '/ambitos/{ambito}',
@@ -112,9 +106,7 @@ class AmbitoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function update(): void
-    {
-    }
+    public function update(): void {}
 
     #[OA\Delete(
         path: '/ambitos/{ambito}',
@@ -133,9 +125,7 @@ class AmbitoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function destroy(): void
-    {
-    }
+    public function destroy(): void {}
 
     #[OA\Post(
         path: '/ambitos/{ambito}/restore',
@@ -154,7 +144,5 @@ class AmbitoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function restore(): void
-    {
-    }
+    public function restore(): void {}
 }

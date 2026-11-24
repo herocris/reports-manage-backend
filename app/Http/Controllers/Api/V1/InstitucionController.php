@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\InstitucionResource;
 use App\Models\Institucion;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\InstitucionIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -33,7 +34,7 @@ class InstitucionController extends Controller
      * includes, field selection, pagination, and `only_trashed` soft-delete scope.
      *
      * @param  IndexInstitucionRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<InstitucionResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<InstitucionResource>>
      */
     public function index(IndexInstitucionRequest $request): AnonymousResourceCollection
     {
@@ -53,7 +54,7 @@ class InstitucionController extends Controller
      * Persist a new institucion record.
      *
      * @param  StoreInstitucionRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see InstitucionResource} envelope.
+     * @return JsonResponse 201 with the created {@see InstitucionResource} envelope.
      */
     public function store(StoreInstitucionRequest $request): JsonResponse
     {
@@ -72,7 +73,7 @@ class InstitucionController extends Controller
      * Return a single institucion by its primary key.
      *
      * @param  Institucion  $institucion  The resolved Institucion model instance.
-     * @return InstitucionResource  200 with the resource envelope.
+     * @return InstitucionResource 200 with the resource envelope.
      */
     public function show(Institucion $institucion): InstitucionResource
     {
@@ -85,9 +86,9 @@ class InstitucionController extends Controller
     /**
      * Apply a partial or full update to the given institucion.
      *
-     * @param  UpdateInstitucionRequest  $request     Validated update payload.
-     * @param  Institucion               $institucion  The resolved Institucion model instance.
-     * @return InstitucionResource  200 with the updated resource envelope.
+     * @param  UpdateInstitucionRequest  $request  Validated update payload.
+     * @param  Institucion  $institucion  The resolved Institucion model instance.
+     * @return InstitucionResource 200 with the updated resource envelope.
      */
     public function update(UpdateInstitucionRequest $request, Institucion $institucion): InstitucionResource
     {
@@ -106,7 +107,7 @@ class InstitucionController extends Controller
      * `institucion_id` FK but may need reassignment before restore.
      *
      * @param  Institucion  $institucion  The resolved Institucion model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Institucion $institucion): JsonResponse
     {
@@ -122,7 +123,7 @@ class InstitucionController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  Institucion  $institucion  The soft-deleted Institucion model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Institucion $institucion): JsonResponse
     {

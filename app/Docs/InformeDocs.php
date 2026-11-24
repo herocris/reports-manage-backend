@@ -73,9 +73,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     #[OA\Post(
         path: '/informes',
@@ -95,9 +93,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function store(): void
-    {
-    }
+    public function store(): void {}
 
     #[OA\Get(
         path: '/informes/{informe}',
@@ -116,9 +112,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function show(): void
-    {
-    }
+    public function show(): void {}
 
     #[OA\Get(
         path: '/informes/{informe}/edit',
@@ -137,9 +131,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function edit(): void
-    {
-    }
+    public function edit(): void {}
 
     #[OA\Put(
         path: '/informes/{informe}',
@@ -163,9 +155,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function update(): void
-    {
-    }
+    public function update(): void {}
 
     #[OA\Delete(
         path: '/informes/{informe}',
@@ -184,9 +174,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function destroy(): void
-    {
-    }
+    public function destroy(): void {}
 
     #[OA\Post(
         path: '/informes/{informe}/restore',
@@ -205,9 +193,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function restore(): void
-    {
-    }
+    public function restore(): void {}
 
     #[OA\Post(
         path: '/informes/{informe}/personas',
@@ -231,9 +217,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function attachPersona(): void
-    {
-    }
+    public function attachPersona(): void {}
 
     #[OA\Delete(
         path: '/informes/{informe}/personas/{persona}',
@@ -253,9 +237,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function detachPersona(): void
-    {
-    }
+    public function detachPersona(): void {}
 
     #[OA\Post(
         path: '/informes/{informe}/bienes',
@@ -279,9 +261,7 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function attachBien(): void
-    {
-    }
+    public function attachBien(): void {}
 
     #[OA\Delete(
         path: '/informes/{informe}/bienes/{bien}',
@@ -301,7 +281,5 @@ class InformeDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function detachBien(): void
-    {
-    }
+    public function detachBien(): void {}
 }

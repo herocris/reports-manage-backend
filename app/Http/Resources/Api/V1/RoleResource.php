@@ -17,9 +17,9 @@ class RoleResource extends JsonResource
      * Transform the Role model into the API JSON shape.
      *
      * @param  Request  $request  The current HTTP request.
-     * @return array<string, mixed>  Shape: {id, name?, permissions?: string[],
-     *   users_count?: int, created_at?, updated_at?}
-     *   Fields marked with `?` are omitted when not loaded.
+     * @return array<string, mixed> Shape: {id, name?, permissions?: string[],
+     *                              users_count?: int, created_at?, updated_at?}
+     *                              Fields marked with `?` are omitted when not loaded.
      */
     public function toArray(Request $request): array
     {

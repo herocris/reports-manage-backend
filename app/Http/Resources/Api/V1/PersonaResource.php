@@ -17,9 +17,9 @@ class PersonaResource extends JsonResource
      * Transform the Persona model into the API JSON shape.
      *
      * @param  Request  $request  The current HTTP request.
-     * @return array<string, mixed>  Shape: {id, nombre?, numero_identificacion?,
-     *   created_at?, updated_at?, adjuntos?: AdjuntoResource[]}
-     *   Fields marked with `?` are omitted when not loaded.
+     * @return array<string, mixed> Shape: {id, nombre?, numero_identificacion?,
+     *                              created_at?, updated_at?, adjuntos?: AdjuntoResource[]}
+     *                              Fields marked with `?` are omitted when not loaded.
      */
     public function toArray(Request $request): array
     {

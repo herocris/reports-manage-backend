@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\TipoBien;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends Factory<\App\Models\TipoBien> */
+/** @extends Factory<TipoBien> */
 class TipoBienFactory extends Factory
 {
     /**

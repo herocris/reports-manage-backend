@@ -43,6 +43,4 @@ use OpenApi\Attributes as OA;
     name: 'laravel_session',
     description: 'Sesion web de Sanctum. Para mutaciones, incluir cabecera X-XSRF-TOKEN luego de /sanctum/csrf-cookie.'
 )]
-class OpenApiSpec
-{
-}
+class OpenApiSpec {}

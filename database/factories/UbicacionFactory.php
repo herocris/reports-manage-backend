@@ -2,9 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Informe;
+use App\Models\Ubicacion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends Factory<\App\Models\Ubicacion> */
+/** @extends Factory<Ubicacion> */
 class UbicacionFactory extends Factory
 {
     /**
@@ -18,7 +20,7 @@ class UbicacionFactory extends Factory
             'latitud' => fake()->randomFloat(6, -89, 89),
             'longitud' => fake()->randomFloat(6, -179, 179),
             'descripcion' => fake()->sentence(),
-            'informe_id' => \App\Models\Informe::factory(),
+            'informe_id' => Informe::factory(),
         ];
     }
 }

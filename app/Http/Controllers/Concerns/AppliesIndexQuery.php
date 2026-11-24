@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Provides the `applyIndexQuery` helper to controllers that need
@@ -24,10 +25,10 @@ trait AppliesIndexQuery
      * `page`, `per_page`, `sort`, `direction`, `search`, `include`, `fields`,
      * `only_trashed`, and `filter[*]` query parameters.
      *
-     * @param  Builder                $query      The base Eloquent query builder.
-     * @param  array<string, mixed>   $validated  Validated request parameters from the form request.
-     * @param  array<string, mixed>   $config     Index definition returned by `{Model}IndexDefinition::definition()`.
-     * @return LengthAwarePaginator<\Illuminate\Database\Eloquent\Model>  Paginated result set.
+     * @param  Builder  $query  The base Eloquent query builder.
+     * @param  array<string, mixed>  $validated  Validated request parameters from the form request.
+     * @param  array<string, mixed>  $config  Index definition returned by `{Model}IndexDefinition::definition()`.
+     * @return LengthAwarePaginator<Model> Paginated result set.
      */
     protected function applyIndexQuery(Builder $query, array $validated, array $config = []): LengthAwarePaginator
     {

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Api\V1\Bien;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -14,7 +13,7 @@ class UpdateBienRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:bien.update` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {

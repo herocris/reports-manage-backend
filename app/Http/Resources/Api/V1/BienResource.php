@@ -17,9 +17,9 @@ class BienResource extends JsonResource
      * Transform the Bien model into the API JSON shape.
      *
      * @param  Request  $request  The current HTTP request.
-     * @return array<string, mixed>  Shape: {id, descripcion?, tipobien_id?, created_at?,
-     *   updated_at?, tipoBien?: TipoBienResource, adjuntos?: AdjuntoResource[]}
-     *   Fields marked with `?` are omitted when not loaded.
+     * @return array<string, mixed> Shape: {id, descripcion?, tipobien_id?, created_at?,
+     *                              updated_at?, tipoBien?: TipoBienResource, adjuntos?: AdjuntoResource[]}
+     *                              Fields marked with `?` are omitted when not loaded.
      */
     public function toArray(Request $request): array
     {

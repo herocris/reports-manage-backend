@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,13 +17,13 @@ use Spatie\Activitylog\Support\LogOptions;
  * Informes may also be associated with an institution through their creating user.
  * Soft-deleting an Institucion does not cascade to users.
  *
- * @property int              $id        Auto-incrementing primary key.
- * @property string           $nombre    Full legal or commercial name of the institution.
- * @property string           $contacto  Name of the primary contact person.
- * @property string           $telefono  Contact telephone number.
- * @property \Carbon\Carbon|null $deleted_at  Timestamp of soft deletion; null when active.
- * @property \Carbon\Carbon   $created_at  Timestamp of record creation.
- * @property \Carbon\Carbon   $updated_at  Timestamp of last modification.
+ * @property int $id Auto-incrementing primary key.
+ * @property string $nombre Full legal or commercial name of the institution.
+ * @property string $contacto Name of the primary contact person.
+ * @property string $telefono Contact telephone number.
+ * @property Carbon|null $deleted_at Timestamp of soft deletion; null when active.
+ * @property Carbon $created_at Timestamp of record creation.
+ * @property Carbon $updated_at Timestamp of last modification.
  */
 class Institucion extends Model
 {

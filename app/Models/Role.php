@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -16,12 +17,12 @@ use Spatie\Permission\Models\Role as SpatieRole;
  * SoftDeletes (restored via `withTrashed` binding) and Spatie Activitylog
  * so that every role create/update/delete is audited.
  *
- * @property int              $id          Auto-incrementing primary key.
- * @property string           $name        Human-readable role name (e.g. `'auditor'`, `'admin'`).
- * @property string           $guard_name  Always `'sanctum'` for this application.
- * @property \Carbon\Carbon|null $deleted_at  Timestamp of soft deletion; null when active.
- * @property \Carbon\Carbon   $created_at  Timestamp of record creation.
- * @property \Carbon\Carbon   $updated_at  Timestamp of last modification.
+ * @property int $id Auto-incrementing primary key.
+ * @property string $name Human-readable role name (e.g. `'auditor'`, `'admin'`).
+ * @property string $guard_name Always `'sanctum'` for this application.
+ * @property Carbon|null $deleted_at Timestamp of soft deletion; null when active.
+ * @property Carbon $created_at Timestamp of record creation.
+ * @property Carbon $updated_at Timestamp of last modification.
  */
 class Role extends SpatieRole
 {

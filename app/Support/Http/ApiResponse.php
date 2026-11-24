@@ -16,9 +16,9 @@ class ApiResponse
     /**
      * Build a successful JSON response.
      *
-     * @param  mixed   $data    The payload to include in the `data` key.
-     * @param  string  $message Human-readable success message.
-     * @param  int     $status  HTTP status code (default 200).
+     * @param  mixed  $data  The payload to include in the `data` key.
+     * @param  string  $message  Human-readable success message.
+     * @param  int  $status  HTTP status code (default 200).
      */
     public static function success(mixed $data = null, string $message = 'Request successful.', int $status = 200): JsonResponse
     {
@@ -32,8 +32,8 @@ class ApiResponse
     /**
      * Build an error JSON response.
      *
-     * @param  string       $message Human-readable error description.
-     * @param  int          $status  HTTP status code.
+     * @param  string  $message  Human-readable error description.
+     * @param  int  $status  HTTP status code.
      * @param  array<string, string[]>|null  $errors  Per-field validation errors, or null.
      */
     public static function error(string $message, int $status, ?array $errors = null): JsonResponse

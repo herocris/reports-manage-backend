@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,12 +17,12 @@ use Spatie\Activitylog\Support\LogOptions;
  * "Equipo"). A TipoBien can have many {@see Bien} records referencing it.
  * Soft-deleting a TipoBien does not cascade to existing bienes.
  *
- * @property int              $id           Auto-incrementing primary key.
- * @property string           $nombre       Short category name (e.g. "Inmueble").
- * @property string           $descripcion  Detailed description of the asset type.
- * @property \Carbon\Carbon|null $deleted_at  Timestamp of soft deletion; null when active.
- * @property \Carbon\Carbon   $created_at   Timestamp of record creation.
- * @property \Carbon\Carbon   $updated_at   Timestamp of last modification.
+ * @property int $id Auto-incrementing primary key.
+ * @property string $nombre Short category name (e.g. "Inmueble").
+ * @property string $descripcion Detailed description of the asset type.
+ * @property Carbon|null $deleted_at Timestamp of soft deletion; null when active.
+ * @property Carbon $created_at Timestamp of record creation.
+ * @property Carbon $updated_at Timestamp of last modification.
  */
 class TipoBien extends Model
 {

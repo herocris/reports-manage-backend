@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\ProductoResource;
 use App\Models\Producto;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\ProductoIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -34,7 +35,7 @@ class ProductoController extends Controller
      * includes, field selection, pagination, and `only_trashed` soft-delete scope.
      *
      * @param  IndexProductoRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<ProductoResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<ProductoResource>>
      */
     public function index(IndexProductoRequest $request): AnonymousResourceCollection
     {
@@ -54,7 +55,7 @@ class ProductoController extends Controller
      * Persist a new producto record.
      *
      * @param  StoreProductoRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see ProductoResource} envelope.
+     * @return JsonResponse 201 with the created {@see ProductoResource} envelope.
      */
     public function store(StoreProductoRequest $request): JsonResponse
     {
@@ -73,7 +74,7 @@ class ProductoController extends Controller
      * Return a single producto by its primary key.
      *
      * @param  Producto  $producto  The resolved Producto model instance.
-     * @return ProductoResource  200 with the resource envelope.
+     * @return ProductoResource 200 with the resource envelope.
      */
     public function show(Producto $producto): ProductoResource
     {
@@ -87,8 +88,8 @@ class ProductoController extends Controller
      * Apply a partial or full update to the given producto.
      *
      * @param  UpdateProductoRequest  $request  Validated update payload.
-     * @param  Producto               $producto  The resolved Producto model instance.
-     * @return ProductoResource  200 with the updated resource envelope.
+     * @param  Producto  $producto  The resolved Producto model instance.
+     * @return ProductoResource 200 with the updated resource envelope.
      */
     public function update(UpdateProductoRequest $request, Producto $producto): ProductoResource
     {
@@ -106,7 +107,7 @@ class ProductoController extends Controller
      * Sets `deleted_at`; the record can be recovered via {@see restore()}.
      *
      * @param  Producto  $producto  The resolved Producto model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Producto $producto): JsonResponse
     {
@@ -122,7 +123,7 @@ class ProductoController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  Producto  $producto  The soft-deleted Producto model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Producto $producto): JsonResponse
     {

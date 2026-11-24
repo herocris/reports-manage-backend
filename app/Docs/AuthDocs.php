@@ -66,9 +66,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function loginMobile(): void
-    {
-    }
+    public function loginMobile(): void {}
 
     #[OA\Post(
         path: '/auth/web/login',
@@ -104,9 +102,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function loginWeb(): void
-    {
-    }
+    public function loginWeb(): void {}
 
     #[OA\Post(
         path: '/login',
@@ -125,9 +121,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function loginLegacy(): void
-    {
-    }
+    public function loginLegacy(): void {}
 
     #[OA\Post(
         path: '/auth/mobile/logout',
@@ -141,9 +135,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function logoutMobile(): void
-    {
-    }
+    public function logoutMobile(): void {}
 
     #[OA\Post(
         path: '/auth/web/logout',
@@ -157,9 +149,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function logoutWeb(): void
-    {
-    }
+    public function logoutWeb(): void {}
 
     #[OA\Post(
         path: '/logout',
@@ -174,9 +164,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function logoutLegacy(): void
-    {
-    }
+    public function logoutLegacy(): void {}
 
     #[OA\Get(
         path: '/me',
@@ -190,9 +178,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function me(): void
-    {
-    }
+    public function me(): void {}
 
     #[OA\Put(
         path: '/me',
@@ -211,9 +197,7 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function updateProfilePut(): void
-    {
-    }
+    public function updateProfilePut(): void {}
 
     #[OA\Patch(
         path: '/me',
@@ -232,7 +216,5 @@ class AuthDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function updateProfilePatch(): void
-    {
-    }
+    public function updateProfilePatch(): void {}
 }

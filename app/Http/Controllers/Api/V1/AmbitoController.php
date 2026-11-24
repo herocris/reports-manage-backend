@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\AmbitoResource;
 use App\Models\Ambito;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\AmbitoIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -33,7 +34,7 @@ class AmbitoController extends Controller
      * includes, field selection, pagination, and `only_trashed` soft-delete scope.
      *
      * @param  IndexAmbitoRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<AmbitoResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<AmbitoResource>>
      */
     public function index(IndexAmbitoRequest $request): AnonymousResourceCollection
     {
@@ -53,7 +54,7 @@ class AmbitoController extends Controller
      * Persist a new ambito record.
      *
      * @param  StoreAmbitoRequest  $request  Validated creation payload.
-     * @return JsonResponse  201 with the created {@see AmbitoResource} envelope.
+     * @return JsonResponse 201 with the created {@see AmbitoResource} envelope.
      */
     public function store(StoreAmbitoRequest $request): JsonResponse
     {
@@ -72,7 +73,7 @@ class AmbitoController extends Controller
      * Return a single ambito by its primary key.
      *
      * @param  Ambito  $ambito  The resolved Ambito model instance.
-     * @return AmbitoResource  200 with the resource envelope.
+     * @return AmbitoResource 200 with the resource envelope.
      */
     public function show(Ambito $ambito): AmbitoResource
     {
@@ -86,8 +87,8 @@ class AmbitoController extends Controller
      * Apply a partial or full update to the given ambito.
      *
      * @param  UpdateAmbitoRequest  $request  Validated update payload.
-     * @param  Ambito               $ambito   The resolved Ambito model instance.
-     * @return AmbitoResource  200 with the updated resource envelope.
+     * @param  Ambito  $ambito  The resolved Ambito model instance.
+     * @return AmbitoResource 200 with the updated resource envelope.
      */
     public function update(UpdateAmbitoRequest $request, Ambito $ambito): AmbitoResource
     {
@@ -105,7 +106,7 @@ class AmbitoController extends Controller
      * Sets `deleted_at`; the record can be recovered via {@see restore()}.
      *
      * @param  Ambito  $ambito  The resolved Ambito model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Ambito $ambito): JsonResponse
     {
@@ -121,7 +122,7 @@ class AmbitoController extends Controller
      * registered in `AppServiceProvider` so the trashed record resolves correctly.
      *
      * @param  Ambito  $ambito  The soft-deleted Ambito model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Ambito $ambito): JsonResponse
     {

@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Persona;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends Factory<\App\Models\Persona> */
+/** @extends Factory<Persona> */
 class PersonaFactory extends Factory
 {
     /**

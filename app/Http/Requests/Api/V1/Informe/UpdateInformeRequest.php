@@ -13,7 +13,7 @@ class UpdateInformeRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:informe.update` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -33,13 +33,13 @@ class UpdateInformeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'expediente'       => ['sometimes', 'string', 'regex:/^EXP-[A-Z]{3}\d{3}$/', 'unique:informes,expediente,' . $this->route('informe')?->id],
-            'titulo'           => ['sometimes', 'string', 'max:255'],
-            'producto_id'      => ['sometimes', 'integer', 'exists:productos,id'],
-            'fecha_inicio'     => ['sometimes', 'date'],
-            'fecha_final'      => ['sometimes', 'date', 'after_or_equal:fecha_inicio'],
-            'ambitos'          => ['sometimes', 'array'],
-            'ambitos.*'        => ['integer', 'exists:ambitos,id'],
+            'expediente' => ['sometimes', 'string', 'regex:/^EXP-[A-Z]{3}\d{3}$/', 'unique:informes,expediente,'.$this->route('informe')?->id],
+            'titulo' => ['sometimes', 'string', 'max:255'],
+            'producto_id' => ['sometimes', 'integer', 'exists:productos,id'],
+            'fecha_inicio' => ['sometimes', 'date'],
+            'fecha_final' => ['sometimes', 'date', 'after_or_equal:fecha_inicio'],
+            'ambitos' => ['sometimes', 'array'],
+            'ambitos.*' => ['integer', 'exists:ambitos,id'],
         ];
     }
 }

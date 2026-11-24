@@ -18,12 +18,12 @@ class InformeResource extends JsonResource
      * Transform the Informe model into the API JSON shape.
      *
      * @param  Request  $request  The current HTTP request.
-     * @return array<string, mixed>  Shape: {id, expediente?, titulo?, producto_id?, fecha_inicio?,
-     *   fecha_final?, creador?: UserResource, created_at?, updated_at?,
-     *   producto?: ProductoResource, personas?: PersonaResource[],
-     *   bienes?: BienResource[], adjuntos?: AdjuntoResource[],
-     *   ubicaciones?: UbicacionResource[], observaciones?: ObservacionResource[],
-     *   bitacoras?: BitacoraResource[], ambitos?: AmbitoResource[]}
+     * @return array<string, mixed> Shape: {id, expediente?, titulo?, producto_id?, fecha_inicio?,
+     *                              fecha_final?, creador?: UserResource, created_at?, updated_at?,
+     *                              producto?: ProductoResource, personas?: PersonaResource[],
+     *                              bienes?: BienResource[], adjuntos?: AdjuntoResource[],
+     *                              ubicaciones?: UbicacionResource[], observaciones?: ObservacionResource[],
+     *                              bitacoras?: BitacoraResource[], ambitos?: AmbitoResource[]}
      */
     public function toArray(Request $request): array
     {

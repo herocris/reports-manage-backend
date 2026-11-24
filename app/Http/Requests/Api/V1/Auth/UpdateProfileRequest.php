@@ -17,7 +17,7 @@ class UpdateProfileRequest extends FormRequest
      * All authenticated users may update their own profile.
      * Ownership is implicitly guaranteed by Sanctum authentication.
      *
-     * @return bool  Always true — any authenticated user can update their own profile.
+     * @return bool Always true — any authenticated user can update their own profile.
      */
     public function authorize(): bool
     {

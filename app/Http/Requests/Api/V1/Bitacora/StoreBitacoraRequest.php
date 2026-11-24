@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Api\V1\Bitacora;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -14,7 +13,7 @@ class StoreBitacoraRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:bitacora.create` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -34,8 +33,8 @@ class StoreBitacoraRequest extends FormRequest
     {
         return [
             'descripcion' => ['required', 'string'],
-            'fecha'       => ['required', 'date'],
-            'informe_id'  => ['required', 'integer', 'exists:informes,id'],
+            'fecha' => ['required', 'date'],
+            'informe_id' => ['required', 'integer', 'exists:informes,id'],
         ];
     }
 }

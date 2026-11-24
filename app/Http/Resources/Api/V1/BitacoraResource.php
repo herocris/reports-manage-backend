@@ -17,9 +17,9 @@ class BitacoraResource extends JsonResource
      * Transform the Bitacora model into the API JSON shape.
      *
      * @param  Request  $request  The current HTTP request.
-     * @return array<string, mixed>  Shape: {id, descripcion?, fecha?, informe_id?,
-     *   created_at?, updated_at?, informe?: InformeResource}
-     *   Fields marked with `?` are omitted when not loaded.
+     * @return array<string, mixed> Shape: {id, descripcion?, fecha?, informe_id?,
+     *                              created_at?, updated_at?, informe?: InformeResource}
+     *                              Fields marked with `?` are omitted when not loaded.
      */
     public function toArray(Request $request): array
     {
