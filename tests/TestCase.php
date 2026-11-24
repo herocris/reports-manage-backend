@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 /**
  * Base test case for all feature and unit tests.
  *
- * Configures in-memory SQLite and loads the full route/provider stack.
+ * Loads the full application stack; phpunit.xml selects Sail's MySQL testing database.
  */
 abstract class TestCase extends BaseTestCase
 {
