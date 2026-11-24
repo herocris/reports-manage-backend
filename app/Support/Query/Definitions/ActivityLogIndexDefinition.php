@@ -20,6 +20,7 @@ class ActivityLogIndexDefinition
     public static function definition(): array
     {
         return [
+            'soft_deletes' => false,
             'searchable' => ['log_name', 'description', 'event'],
             'sortable' => [
                 'id',
@@ -33,19 +34,28 @@ class ActivityLogIndexDefinition
                 'updated_at',
             ],
             'filters' => [
-                'subject_type' => function (Builder $query, string $value): void {
-                    $subjectType = ActivityLogSubjectTypes::resolve($value);
+                'subject_type' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => function (Builder $query, string $value): void {
+                        $subjectType = ActivityLogSubjectTypes::resolve($value);
 
-                    if ($subjectType === null) {
-                        $query->whereKey([]);
+                        if ($subjectType === null) {
+                            $query->whereKey([]);
 
-                        return;
-                    }
+                            return;
+                        }
 
-                    $query->where('subject_type', $subjectType);
-                },
-                'subject_id' => 'subject_id',
-                'event' => 'event',
+                        $query->where('subject_type', $subjectType);
+                    },
+                ],
+                'subject_id' => [
+                    'rules' => ['sometimes', 'integer', 'min:1'],
+                    'query' => 'subject_id',
+                ],
+                'event' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => 'event',
+                ],
             ],
             'default_sort' => 'created_at',
             'default_direction' => 'desc',

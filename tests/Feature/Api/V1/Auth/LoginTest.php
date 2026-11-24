@@ -115,13 +115,14 @@ class LoginTest extends TestCase
         $this->assertContains('reports.view', $response->json('data.user.permissions', []));
     }
 
-    public function test_web_login_for_super_admin_includes_all_permissions(): void
+    public function test_web_login_for_super_admin_includes_its_granted_permissions(): void
     {
         $user = User::factory()->create();
         Permission::findOrCreate('users.view', 'sanctum');
         Permission::findOrCreate('roles.view', 'sanctum');
 
         $superAdminRole = Role::findOrCreate('super-admin', 'sanctum');
+        $superAdminRole->syncPermissions(['users.view', 'roles.view']);
         $user->assignRole($superAdminRole);
 
         $response = $this->postJson('/api/v1/auth/web/login', [
@@ -135,6 +136,18 @@ class LoginTest extends TestCase
         $permissions = $response->json('data.user.permissions', []);
         $this->assertContains('users.view', $permissions);
         $this->assertContains('roles.view', $permissions);
+    }
+
+    public function test_role_names_do_not_advertise_permissions_that_were_not_granted(): void
+    {
+        $user = User::factory()->create();
+        Permission::findOrCreate('users.delete', 'sanctum');
+        $user->assignRole(Role::findOrCreate('super-admin', 'sanctum'));
+
+        $this->postJson('/api/v1/auth/web/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertOk()->assertJsonPath('data.user.permissions', []);
     }
 
     public function test_legacy_login_endpoint_remains_available_for_mobile_clients(): void

@@ -2,13 +2,14 @@
 
 namespace App\Support\Query\Definitions;
 
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Index query definition for the User resource.
  *
  * Configures search, sort, filters, and allowed includes
- * used by {@see \App\Support\Query\IndexQueryApplier}.
+ * used by {@see IndexQueryApplier}.
  */
 class UserIndexDefinition
 {
@@ -23,13 +24,32 @@ class UserIndexDefinition
             'searchable' => ['name', 'email'],
             'sortable' => ['id', 'name', 'email', 'email_verified_at', 'created_at', 'updated_at'],
             'includes' => ['roles', 'permissions', 'institucion'],
+            'include_loads' => [
+                'roles' => ['roles.permissions', 'permissions'],
+                'permissions' => ['roles.permissions', 'permissions'],
+            ],
             'fields' => ['id', 'name', 'email', 'email_verified_at', 'institucion_id', 'created_at', 'updated_at'],
             'filters' => [
-                'name' => fn (Builder $query, string $value) => $query->where('name', 'like', '%'.$value.'%'),
-                'email' => fn (Builder $query, string $value) => $query->where('email', 'like', '%'.$value.'%'),
-                'institucion_id' => 'institucion_id',
-                'role' => fn (Builder $query, string $value) => $query->whereHas('roles', fn (Builder $roleQuery) => $roleQuery->where('name', $value)),
-                'permission' => fn (Builder $query, string $value) => $query->whereHas('permissions', fn (Builder $permissionQuery) => $permissionQuery->where('name', $value)),
+                'name' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => fn (Builder $query, string $value) => $query->where('name', 'like', '%'.$value.'%'),
+                ],
+                'email' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => fn (Builder $query, string $value) => $query->where('email', 'like', '%'.$value.'%'),
+                ],
+                'institucion_id' => [
+                    'rules' => ['sometimes', 'integer', 'exists:institucions,id'],
+                    'query' => 'institucion_id',
+                ],
+                'role' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => fn (Builder $query, string $value) => $query->whereHas('roles', fn (Builder $roleQuery) => $roleQuery->where('name', $value)),
+                ],
+                'permission' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => fn (Builder $query, string $value) => $query->whereHas('permissions', fn (Builder $permissionQuery) => $permissionQuery->where('name', $value)),
+                ],
             ],
             'default_sort' => 'created_at',
             'default_direction' => 'desc',

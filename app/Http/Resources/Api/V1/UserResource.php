@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
@@ -38,7 +37,7 @@ class UserResource extends JsonResource
                 $request->user()?->id === $this->id,
                 fn () => $this->email_verified_at,
             ),
-            'institucion_id' => $this->whenHas('institucion_id', fn () => (int) $this->institucion_id),
+            'institucion_id' => $this->whenHas('institucion_id', fn () => $this->institucion_id === null ? null : (int) $this->institucion_id),
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
             'permissions' => $this->when(
                 $this->relationLoaded('roles') || $this->relationLoaded('permissions'),
@@ -56,24 +55,13 @@ class UserResource extends JsonResource
     /**
      * Resolve user permissions for API output.
      *
-     * Returns all system permissions for users with the `super-admin` role.
-     * For any other role, returns effective permissions granted via roles and
-     * direct user permissions.
+     * Returns the same effective permissions used by authorization checks.
      *
      * @return Collection<int, string>
      */
-    private function resolvePermissions()
+    private function resolvePermissions(): Collection
     {
-        $hasSuperAdminRole = $this->roles->contains(
-            fn ($role): bool => strtolower((string) $role->name) === 'super-admin'
-        );
-
-        if ($hasSuperAdminRole) {
-            return Permission::query()
-                ->where('guard_name', 'sanctum')
-                ->pluck('name')
-                ->values();
-        }
+        $this->resource->loadMissing(['roles.permissions', 'permissions']);
 
         return $this->getAllPermissions()
             ->pluck('name')

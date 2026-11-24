@@ -2,30 +2,35 @@
 
 namespace App\Support\Query;
 
+use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Applies the full index pipeline—pagination, sorting, search, filters,
  * field selection, includes, and soft-delete scoping—to an Eloquent query.
  *
- * Consumed by controllers via the {@see \App\Http\Controllers\Concerns\AppliesIndexQuery} trait.
+ * Consumed by controllers via the {@see AppliesIndexQuery} trait.
  */
 class IndexQueryApplier
 {
     /**
      * Run the complete index pipeline and return a paginated result.
      *
-     * @param  Builder  $query      The base Eloquent query builder.
+     * @param  Builder  $query  The base Eloquent query builder.
      * @param  array<string, mixed>  $validated  Validated query-string parameters.
-     * @param  array<string, mixed>  $config     Definition array from an `*IndexDefinition::definition()` call.
+     * @param  array<string, mixed>  $config  Definition array from an `*IndexDefinition::definition()` call.
      */
     public function apply(Builder $query, array $validated, array $config = []): LengthAwarePaginator
     {
         $this->applyOnlyTrashed($query, (bool) ($validated['only_trashed'] ?? false));
-        $this->applyIncludes($query, $validated['include'] ?? null, $config['includes'] ?? []);
+        $this->applyIncludes($query, $validated['include'] ?? null, $config['includes'] ?? [], $config['include_loads'] ?? []);
         $this->applyFields($query, $validated['fields'] ?? null, $config['fields'] ?? []);
         $this->applySearch($query, (string) ($validated['search'] ?? ''), $config['searchable'] ?? []);
         $this->applyFilters($query, $validated['filter'] ?? [], $config['filters'] ?? []);
@@ -39,8 +44,13 @@ class IndexQueryApplier
         $direction = (string) ($validated['direction'] ?? ($config['default_direction'] ?? 'desc'));
         $perPage = (int) ($validated['per_page'] ?? ($config['default_per_page'] ?? 15));
 
+        $query->orderBy($sort, $direction);
+
+        if ($sort !== $query->getModel()->getKeyName()) {
+            $query->orderBy($query->getModel()->getQualifiedKeyName(), $direction);
+        }
+
         return $query
-            ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();
     }
@@ -59,8 +69,9 @@ class IndexQueryApplier
      * Eager-load relationships whitelisted in the definition's `includes` array.
      *
      * @param  string[]  $includeMap  Allowed relationship names.
+     * @param  array<string, string[]>  $includeLoads  Additional relationships required to serialize an include.
      */
-    private function applyIncludes(Builder $query, mixed $rawIncludes, array $includeMap): void
+    private function applyIncludes(Builder $query, mixed $rawIncludes, array $includeMap, array $includeLoads): void
     {
         $requestedIncludes = is_array($rawIncludes) ? $rawIncludes : [];
 
@@ -71,7 +82,11 @@ class IndexQueryApplier
         $includes = array_values(array_intersect($requestedIncludes, $includeMap));
 
         if (! empty($includes)) {
-            $query->with($includes);
+            foreach ($includes as $include) {
+                $includes = array_merge($includes, $includeLoads[$include] ?? []);
+            }
+
+            $query->with(array_unique($includes));
         }
     }
 
@@ -95,7 +110,33 @@ class IndexQueryApplier
             $fields[] = $keyName;
         }
 
-        $query->select($fields);
+        foreach (array_keys($query->getEagerLoads()) as $include) {
+            $relationName = explode('.', $include)[0];
+            $relation = $query->getModel()->{$relationName}();
+
+            if ($relation instanceof BelongsTo) {
+                $fields[] = $relation->getForeignKeyName();
+            }
+
+            if ($relation instanceof MorphTo) {
+                $fields[] = $relation->getMorphType();
+            }
+
+            if ($relation instanceof HasOneOrMany) {
+                $fields[] = $relation->getLocalKeyName();
+            }
+
+            if ($relation instanceof BelongsToMany) {
+                $fields[] = $relation->getParentKeyName();
+            }
+        }
+
+        $query->getQuery()->columns = array_values(array_filter(
+            $query->getQuery()->columns ?? [],
+            fn (mixed $column): bool => ! is_string($column) || str_contains(strtolower($column), ' as '),
+        ));
+
+        $query->addSelect(array_unique($fields));
     }
 
     /**
@@ -127,10 +168,10 @@ class IndexQueryApplier
     /**
      * Apply per-field filters from the request against the definition's filter map.
      *
-     * Each entry in `$filterMap` is either a column name string (simple equality)
-     * or a `Closure(Builder, mixed): void` for complex queries.
+     * Each filter contains validation rules and either a column name (equality)
+     * or a closure that applies a complex query.
      *
-     * @param  array<string, string|Closure>  $filterMap  Allowed filter definitions.
+     * @param  array<string, array{rules: array<int, mixed>, query: string|Closure}>  $filterMap
      */
     private function applyFilters(Builder $query, mixed $rawFilters, array $filterMap): void
     {
@@ -145,7 +186,7 @@ class IndexQueryApplier
                 continue;
             }
 
-            $handler = $filterMap[$key];
+            $handler = $filterMap[$key]['query'];
 
             if (is_string($handler)) {
                 $query->where($handler, $value);
@@ -163,8 +204,8 @@ class IndexQueryApplier
      * Resolve the sort column, falling back to the default if the requested
      * column is not in the sortable whitelist.
      *
-     * @param  string[]  $sortable     Allowed sort columns.
-     * @param  string    $defaultSort  Fallback column name.
+     * @param  string[]  $sortable  Allowed sort columns.
+     * @param  string  $defaultSort  Fallback column name.
      */
     private function resolveSort(mixed $rawSort, array $sortable, string $defaultSort): string
     {

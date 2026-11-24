@@ -2,13 +2,14 @@
 
 namespace App\Support\Query\Definitions;
 
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Index query definition for the Role resource.
  *
  * Configures search, sort, filters, and allowed includes
- * used by {@see \App\Support\Query\IndexQueryApplier}.
+ * used by {@see IndexQueryApplier}.
  */
 class RoleIndexDefinition
 {
@@ -25,9 +26,18 @@ class RoleIndexDefinition
             'includes' => ['permissions'],
             'fields' => ['id', 'name', 'guard_name', 'created_at', 'updated_at'],
             'filters' => [
-                'name' => fn (Builder $query, string $value) => $query->where('name', 'like', '%'.$value.'%'),
-                'guard_name' => 'guard_name',
-                'permission' => fn (Builder $query, string $value) => $query->whereHas('permissions', fn (Builder $permissionQuery) => $permissionQuery->where('name', $value)),
+                'name' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => fn (Builder $query, string $value) => $query->where('name', 'like', '%'.$value.'%'),
+                ],
+                'guard_name' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => 'guard_name',
+                ],
+                'permission' => [
+                    'rules' => ['sometimes', 'string', 'max:255'],
+                    'query' => fn (Builder $query, string $value) => $query->whereHas('permissions', fn (Builder $permissionQuery) => $permissionQuery->where('name', $value)),
+                ],
             ],
             'default_sort' => 'created_at',
             'default_direction' => 'desc',
