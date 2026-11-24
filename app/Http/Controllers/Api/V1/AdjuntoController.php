@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Adjunto\StoreAdjuntosAction;
 use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Adjunto\IndexAdjuntoRequest;
@@ -14,7 +15,9 @@ use App\Models\Informe;
 use App\Models\Persona;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\AdjuntoIndexDefinition;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Storage;
@@ -25,7 +28,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  * An adjunto is a polymorphic file attachment that can belong to an
  * {@see Informe}, {@see Persona}, or {@see Bien}. Files are stored in the
- * `public` disk under `adjuntos/{tipo}/`. When an adjunto is force-deleted,
+ * private `attachments` disk under `adjuntos/{tipo}/`. When an adjunto is force-deleted,
  * the physical file is removed from storage via a model boot hook.
  *
  * Provides two delivery endpoints:
@@ -45,7 +48,7 @@ class AdjuntoController extends Controller
      * and an `only_trashed` soft-delete scope.
      *
      * @param  IndexAdjuntoRequest  $request  Validated query parameters.
-     * @return AnonymousResourceCollection<\Illuminate\Contracts\Pagination\LengthAwarePaginator<AdjuntoResource>>
+     * @return AnonymousResourceCollection<LengthAwarePaginator<AdjuntoResource>>
      */
     public function index(IndexAdjuntoRequest $request): AnonymousResourceCollection
     {
@@ -66,26 +69,18 @@ class AdjuntoController extends Controller
      *
      * The `tipo` field determines which model class is the owner (`informe`,
      * `persona`, or `bien`). Each file is stored under `adjuntos/{tipo}/` on
-     * the `public` disk; the original filename is used as the description.
+     * the private `attachments` disk; the original filename is used as the description.
      * All uploads within a single request share the same owner record.
      *
      * @param  StoreAdjuntoRequest  $request  Validated upload payload including `tipo`, `modelo_id`, and `archivos[]`.
-     * @return JsonResponse  201 with a collection of {@see AdjuntoResource} envelopes.
+     * @return JsonResponse 201 with a collection of {@see AdjuntoResource} envelopes.
      */
-    public function store(StoreAdjuntoRequest $request): JsonResponse
+    public function store(StoreAdjuntoRequest $request, StoreAdjuntosAction $action): JsonResponse
     {
         $validated = $request->validated();
         $adjuntable = $this->resolveAdjuntable($validated['tipo'], $validated['modelo_id']);
 
-        $adjuntos = collect($request->file('archivos'))
-            ->map(function ($archivo) use ($adjuntable, $validated): Adjunto {
-                $ruta = $archivo->store('adjuntos/' . $validated['tipo'], 'public');
-
-                return $adjuntable->adjuntos()->create([
-                    'url' => $ruta,
-                    'descripcion' => $archivo->getClientOriginalName(),
-                ]);
-            });
+        $adjuntos = $action->execute($adjuntable, $validated['tipo'], $request->file('archivos'));
 
         return AdjuntoResource::collection($adjuntos)
             ->additional([
@@ -103,7 +98,7 @@ class AdjuntoController extends Controller
      * resolved via named routes `v1.adjuntos.download` and `v1.adjuntos.stream`.
      *
      * @param  Adjunto  $adjunto  The resolved Adjunto model instance.
-     * @return AdjuntoResource  200 with the resource envelope.
+     * @return AdjuntoResource 200 with the resource envelope.
      */
     public function show(Adjunto $adjunto): AdjuntoResource
     {
@@ -116,19 +111,19 @@ class AdjuntoController extends Controller
     /**
      * Force a file download with Content-Disposition: attachment.
      *
-     * Checks that the file exists on the `public` disk before streaming;
+     * Checks that the file exists on the private disk before streaming;
      * aborts with 404 if the physical file is missing. The filename sent
      * to the browser is the adjunto's `descripcion`, falling back to the
      * basename of the stored path.
      *
      * @param  Adjunto  $adjunto  The resolved Adjunto model instance.
-     * @return StreamedResponse  Binary file stream with attachment headers.
+     * @return StreamedResponse Binary file stream with attachment headers.
      */
     public function download(Adjunto $adjunto): StreamedResponse
     {
-        abort_unless(Storage::disk('public')->exists($adjunto->url), 404);
+        abort_unless(Storage::disk('attachments')->exists($adjunto->url), 404);
 
-        return Storage::disk('public')->download(
+        return Storage::disk('attachments')->download(
             $adjunto->url,
             $adjunto->descripcion ?: basename($adjunto->url),
         );
@@ -142,27 +137,27 @@ class AdjuntoController extends Controller
      * saving it. Aborts with 404 if the physical file is missing from disk.
      *
      * @param  Adjunto  $adjunto  The resolved Adjunto model instance.
-     * @return StreamedResponse  Binary file stream with inline content-disposition headers.
+     * @return StreamedResponse Binary file stream with inline content-disposition headers.
      */
     public function stream(Adjunto $adjunto): StreamedResponse
     {
-        abort_unless(Storage::disk('public')->exists($adjunto->url), 404);
+        abort_unless(Storage::disk('attachments')->exists($adjunto->url), 404);
 
-        return Storage::disk('public')->response(
+        return Storage::disk('attachments')->response(
             $adjunto->url,
             $adjunto->descripcion ?: basename($adjunto->url),
         );
     }
 
     /**
-     * Update the metadata (description and/or URL) of an existing adjunto.
+     * Update the description of an existing adjunto.
      *
      * Does not replace the physical file on disk — only the database record
      * is modified. To replace the file, delete this adjunto and create a new one.
      *
-     * @param  UpdateAdjuntoRequest  $request   Validated update payload.
-     * @param  Adjunto               $adjunto   The resolved Adjunto model instance.
-     * @return AdjuntoResource  200 with the updated resource envelope.
+     * @param  UpdateAdjuntoRequest  $request  Validated update payload.
+     * @param  Adjunto  $adjunto  The resolved Adjunto model instance.
+     * @return AdjuntoResource 200 with the updated resource envelope.
      */
     public function update(UpdateAdjuntoRequest $request, Adjunto $adjunto): AdjuntoResource
     {
@@ -179,10 +174,10 @@ class AdjuntoController extends Controller
      *
      * Only sets `deleted_at`; the file on disk is NOT removed. If the adjunto
      * is force-deleted (e.g. via cascade), the model boot hook in
-     * {@see Adjunto::booted()} deletes the physical file from the `public` disk.
+     * {@see Adjunto::booted()} deletes the physical file from the private disk.
      *
      * @param  Adjunto  $adjunto  The resolved Adjunto model instance.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function destroy(Adjunto $adjunto): JsonResponse
     {
@@ -198,7 +193,7 @@ class AdjuntoController extends Controller
      * must still exist on disk for delivery endpoints to work after restore.
      *
      * @param  Adjunto  $adjunto  The soft-deleted Adjunto model instance to restore.
-     * @return JsonResponse  200 with a success envelope and null data.
+     * @return JsonResponse 200 with a success envelope and null data.
      */
     public function restore(Adjunto $adjunto): JsonResponse
     {
@@ -211,15 +206,15 @@ class AdjuntoController extends Controller
      * Resolve the polymorphic owner model from the `tipo` and `modelo_id` request values.
      *
      * Maps the string `tipo` to its corresponding Eloquent model class and performs
-     * a `findOrFail` lookup. Throws a {@see \Illuminate\Database\Eloquent\ModelNotFoundException}
+     * a `findOrFail` lookup. Throws a {@see ModelNotFoundException}
      * (→ 404) if the record does not exist, and aborts with 422 if `tipo` is not
      * one of the three allowed values (`informe`, `persona`, `bien`).
      *
-     * @param  string  $tipo      One of: 'informe', 'persona', 'bien'.
-     * @param  int     $modeloId  Primary key of the owner record.
-     * @return Model  The resolved Eloquent model instance.
+     * @param  string  $tipo  One of: 'informe', 'persona', 'bien'.
+     * @param  int  $modeloId  Primary key of the owner record.
+     * @return Model The resolved Eloquent model instance.
      *
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException  If the owner record does not exist.
+     * @throws ModelNotFoundException If the owner record does not exist.
      */
     private function resolveAdjuntable(string $tipo, int $modeloId): Model
     {

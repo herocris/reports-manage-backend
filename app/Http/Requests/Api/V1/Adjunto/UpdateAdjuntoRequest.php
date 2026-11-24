@@ -13,7 +13,7 @@ class UpdateAdjuntoRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:adjunto.update` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -23,8 +23,7 @@ class UpdateAdjuntoRequest extends FormRequest
     /**
      * Validation rules for updating adjunto metadata.
      *
-     * Optional keys: `url` (string, max 2048 chars — relative disk path),
-     * `descripcion` (string — human-readable file label).
+     * Only the human-readable description can be changed. Storage paths are internal.
      * Physical file replacement is not supported; delete and re-create instead.
      *
      * @return array<string, mixed>
@@ -32,9 +31,8 @@ class UpdateAdjuntoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'url' => ['sometimes', 'string', 'max:2048'],
+            'url' => ['prohibited'],
             'descripcion' => ['sometimes', 'string'],
         ];
     }
 }
-

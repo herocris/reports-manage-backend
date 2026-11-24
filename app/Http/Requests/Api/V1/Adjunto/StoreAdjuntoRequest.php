@@ -16,7 +16,7 @@ class StoreAdjuntoRequest extends FormRequest
      * Grant access to all authenticated users; route middleware enforces the
      * `permission:adjunto.create` check before this request is instantiated.
      *
-     * @return bool  Always true — authorization is delegated to route middleware.
+     * @return bool Always true — authorization is delegated to route middleware.
      */
     public function authorize(): bool
     {
@@ -37,7 +37,7 @@ class StoreAdjuntoRequest extends FormRequest
         return [
             'tipo' => ['required', 'string', 'in:persona,bien,informe'],
             'modelo_id' => ['required', 'integer'],
-            'archivos' => ['required', 'array', 'min:1'],
+            'archivos' => ['required', 'array', 'min:1', 'max:20'],
             'archivos.*' => ['required', File::image()->max('10mb')],
         ];
     }

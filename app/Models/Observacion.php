@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ObservacionEstado;
+use App\Models\Concerns\TracksCascadeDeletion;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +29,7 @@ use Spatie\Activitylog\Support\LogOptions;
  */
 class Observacion extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes, TracksCascadeDeletion;
 
     protected $fillable = [
         'numero',

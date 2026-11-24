@@ -22,11 +22,11 @@ class StoreInformeTest extends TestCase
         $producto = Producto::factory()->create();
 
         return [
-            'expediente'   => 'EXP-ABC123',
-            'titulo'       => 'Informe de prueba',
-            'producto_id'  => $producto->id,
+            'expediente' => 'EXP-ABC123',
+            'titulo' => 'Informe de prueba',
+            'producto_id' => $producto->id,
             'fecha_inicio' => '2025-01-01',
-            'fecha_final'  => '2025-06-30',
+            'fecha_final' => '2025-06-30',
         ];
     }
 

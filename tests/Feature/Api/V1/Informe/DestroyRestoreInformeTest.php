@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1\Informe;
 
+use App\Models\ActivityLog;
 use App\Models\Adjunto;
 use App\Models\Bitacora;
 use App\Models\Informe;
@@ -42,7 +43,7 @@ class DestroyRestoreInformeTest extends TestCase
         $observacion = Observacion::factory()->create(['informe_id' => $informe->id]);
         $bitacora = Bitacora::factory()->create(['informe_id' => $informe->id]);
         $adjunto = Adjunto::factory()->create([
-            'adjuntable_id'   => $informe->id,
+            'adjuntable_id' => $informe->id,
             'adjuntable_type' => Informe::class,
         ]);
 
@@ -73,5 +74,70 @@ class DestroyRestoreInformeTest extends TestCase
 
         $this->actingAs($actor)->postJson("/api/v1/informes/{$informe->id}/restore")
             ->assertForbidden();
+    }
+
+    public function test_restore_preserves_children_deleted_before_the_informe(): void
+    {
+        $actor = $this->createAuthorizedUser(['informes.delete', 'informes.restore']);
+        $informe = Informe::factory()->create();
+        $children = [
+            Ubicacion::factory()->create(['informe_id' => $informe->id]),
+            Observacion::factory()->create(['informe_id' => $informe->id]),
+            Bitacora::factory()->create(['informe_id' => $informe->id]),
+            Adjunto::factory()->create([
+                'adjuntable_id' => $informe->id,
+                'adjuntable_type' => Informe::class,
+            ]),
+        ];
+
+        foreach ($children as $child) {
+            $child->delete();
+        }
+
+        $this->actingAs($actor)->deleteJson("/api/v1/informes/{$informe->id}")->assertOk();
+        $this->actingAs($actor)->postJson("/api/v1/informes/{$informe->id}/restore")->assertOk();
+
+        $this->assertNotSoftDeleted($informe);
+
+        foreach ($children as $child) {
+            $this->assertSoftDeleted($child);
+        }
+    }
+
+    public function test_independently_restoring_and_deleting_a_child_removes_it_from_the_cascade(): void
+    {
+        $actor = $this->createAuthorizedUser(['informes.delete', 'informes.restore']);
+        $informe = Informe::factory()->create();
+        $bitacora = Bitacora::factory()->create(['informe_id' => $informe->id]);
+
+        $this->actingAs($actor)->deleteJson("/api/v1/informes/{$informe->id}")->assertOk();
+
+        $bitacora->refresh()->restore();
+        $bitacora->delete();
+
+        $this->actingAs($actor)->postJson("/api/v1/informes/{$informe->id}/restore")->assertOk();
+
+        $this->assertNotSoftDeleted($informe);
+        $this->assertSoftDeleted($bitacora);
+        $this->assertNull($bitacora->fresh()->deletion_batch_id);
+    }
+
+    public function test_cascade_records_child_delete_and_restore_events_in_the_audit_log(): void
+    {
+        $actor = $this->createAuthorizedUser(['informes.delete', 'informes.restore']);
+        $informe = Informe::factory()->create();
+        $bitacora = Bitacora::factory()->create(['informe_id' => $informe->id]);
+
+        $this->actingAs($actor)->deleteJson("/api/v1/informes/{$informe->id}")->assertOk();
+        $this->actingAs($actor)->postJson("/api/v1/informes/{$informe->id}/restore")->assertOk();
+
+        foreach (['deleted', 'restored'] as $event) {
+            $this->assertTrue(ActivityLog::query()
+                ->where('subject_type', Bitacora::class)
+                ->where('subject_id', $bitacora->id)
+                ->where('event', $event)
+                ->where('causer_id', $actor->id)
+                ->exists());
+        }
     }
 }

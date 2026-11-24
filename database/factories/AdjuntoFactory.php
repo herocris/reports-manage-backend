@@ -18,7 +18,7 @@ class AdjuntoFactory extends Factory
     public function definition(): array
     {
         return [
-            'url' => fake()->url(),
+            'url' => 'adjuntos/informe/'.fake()->uuid().'.jpg',
             'descripcion' => fake()->sentence(),
         ];
     }

@@ -59,7 +59,7 @@ class ShowEditInformeTest extends TestCase
         Observacion::factory()->create(['informe_id' => $informe->id]);
         Bitacora::factory()->create(['informe_id' => $informe->id]);
         Adjunto::factory()->create([
-            'adjuntable_id'   => $informe->id,
+            'adjuntable_id' => $informe->id,
             'adjuntable_type' => Informe::class,
         ]);
 

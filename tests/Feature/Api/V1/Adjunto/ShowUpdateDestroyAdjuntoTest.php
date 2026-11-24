@@ -37,12 +37,12 @@ class ShowUpdateDestroyAdjuntoTest extends TestCase
 
     public function test_authenticated_user_can_download_adjunto(): void
     {
-        Storage::fake('public');
+        Storage::fake('attachments');
 
         $actor = $this->createAuthorizedUser(['adjuntos.view']);
         $informe = Informe::factory()->create();
         $path = 'adjuntos/informe/prueba.jpg';
-        Storage::disk('public')->put($path, 'contenido');
+        Storage::disk('attachments')->put($path, 'contenido');
 
         $adjunto = Adjunto::factory()->create([
             'url' => $path,
@@ -59,7 +59,7 @@ class ShowUpdateDestroyAdjuntoTest extends TestCase
 
     public function test_download_returns_404_when_file_is_missing(): void
     {
-        Storage::fake('public');
+        Storage::fake('attachments');
 
         $actor = $this->createAuthorizedUser(['adjuntos.view']);
         $informe = Informe::factory()->create();
@@ -92,12 +92,12 @@ class ShowUpdateDestroyAdjuntoTest extends TestCase
 
     public function test_authenticated_user_can_stream_adjunto_inline(): void
     {
-        Storage::fake('public');
+        Storage::fake('attachments');
 
         $actor = $this->createAuthorizedUser(['adjuntos.view']);
         $informe = Informe::factory()->create();
         $path = 'adjuntos/informe/imagen.jpg';
-        Storage::disk('public')->put($path, 'contenido');
+        Storage::disk('attachments')->put($path, 'contenido');
 
         $adjunto = Adjunto::factory()->create([
             'url' => $path,
@@ -114,7 +114,7 @@ class ShowUpdateDestroyAdjuntoTest extends TestCase
 
     public function test_stream_returns_404_when_file_is_missing(): void
     {
-        Storage::fake('public');
+        Storage::fake('attachments');
 
         $actor = $this->createAuthorizedUser(['adjuntos.view']);
         $informe = Informe::factory()->create();
@@ -132,11 +132,11 @@ class ShowUpdateDestroyAdjuntoTest extends TestCase
 
     public function test_physical_file_is_deleted_when_adjunto_is_force_deleted(): void
     {
-        Storage::fake('public');
+        Storage::fake('attachments');
 
         $informe = Informe::factory()->create();
         $path = 'adjuntos/informe/documento.pdf';
-        Storage::disk('public')->put($path, 'contenido');
+        Storage::disk('attachments')->put($path, 'contenido');
 
         $adjunto = Adjunto::factory()->create([
             'url' => $path,
@@ -146,16 +146,16 @@ class ShowUpdateDestroyAdjuntoTest extends TestCase
 
         $adjunto->forceDelete();
 
-        Storage::disk('public')->assertMissing($path);
+        Storage::disk('attachments')->assertMissing($path);
     }
 
     public function test_physical_file_is_kept_when_adjunto_is_soft_deleted(): void
     {
-        Storage::fake('public');
+        Storage::fake('attachments');
 
         $informe = Informe::factory()->create();
         $path = 'adjuntos/informe/documento.pdf';
-        Storage::disk('public')->put($path, 'contenido');
+        Storage::disk('attachments')->put($path, 'contenido');
 
         $adjunto = Adjunto::factory()->create([
             'url' => $path,
@@ -165,6 +165,32 @@ class ShowUpdateDestroyAdjuntoTest extends TestCase
 
         $adjunto->delete();
 
-        Storage::disk('public')->assertExists($path);
+        Storage::disk('attachments')->assertExists($path);
+    }
+
+    public function test_storage_paths_cannot_be_changed_through_metadata_updates(): void
+    {
+        $actor = $this->createAuthorizedUser(['adjuntos.update']);
+        $adjunto = Adjunto::factory()->for(Informe::factory(), 'adjuntable')->create();
+        $originalPath = $adjunto->url;
+
+        $this->actingAs($actor)->patchJson('/api/v1/adjuntos/'.$adjunto->id, [
+            'url' => '../another-file.jpg',
+            'descripcion' => 'Changed',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['url']);
+
+        $this->assertSame($originalPath, $adjunto->fresh()->url);
+    }
+
+    public function test_private_files_require_authentication_and_download_permission(): void
+    {
+        Storage::fake('attachments');
+        $adjunto = Adjunto::factory()->for(Informe::factory(), 'adjuntable')->create();
+        Storage::disk('attachments')->put($adjunto->url, 'private');
+
+        $this->getJson('/api/v1/adjuntos/'.$adjunto->id.'/download')->assertUnauthorized();
+        $this->actingAs(User::factory()->create())
+            ->getJson('/api/v1/adjuntos/'.$adjunto->id.'/download')->assertForbidden();
+        $this->getJson('/storage/'.$adjunto->url)->assertForbidden();
     }
 }

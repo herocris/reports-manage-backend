@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksCascadeDeletion;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,20 +29,22 @@ use Spatie\Activitylog\Support\LogOptions;
  * and `attachBien()` / `detachBien()`. Ambitos are synced via `InformeController::store()`
  * and `update()`.
  *
- * @property int              $id                  Auto-incrementing primary key.
- * @property string           $expediente          Unique dossier or file reference number.
- * @property string           $titulo              Human-readable report title.
- * @property int              $producto_id         FK → productos.id — the audit product category.
- * @property \Carbon\Carbon   $fecha_inicio        Start date of the audit period.
- * @property \Carbon\Carbon   $fecha_final         End date of the audit period.
- * @property int              $usuariocreador_id   FK → users.id — the user who created this report.
- * @property \Carbon\Carbon|null $deleted_at       Timestamp of soft deletion; null when active.
- * @property \Carbon\Carbon   $created_at          Timestamp of record creation.
- * @property \Carbon\Carbon   $updated_at          Timestamp of last modification.
+ * @property int $id Auto-incrementing primary key.
+ * @property string $expediente Unique dossier or file reference number.
+ * @property string $titulo Human-readable report title.
+ * @property int $producto_id FK → productos.id — the audit product category.
+ * @property Carbon $fecha_inicio Start date of the audit period.
+ * @property Carbon $fecha_final End date of the audit period.
+ * @property int $usuariocreador_id FK → users.id — the user who created this report.
+ * @property Carbon|null $deleted_at Timestamp of soft deletion; null when active.
+ * @property Carbon $created_at Timestamp of record creation.
+ * @property Carbon $updated_at Timestamp of last modification.
  */
 class Informe extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes, TracksCascadeDeletion;
+
+    public const array CASCADED_RELATIONS = ['ubicaciones', 'observaciones', 'bitacoras', 'adjuntos'];
 
     protected $fillable = [
         'expediente',
@@ -64,6 +68,7 @@ class Informe extends Model
     {
         return $this->belongsTo(Producto::class);
     }
+
     public function usuarioCreador(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuariocreador_id');

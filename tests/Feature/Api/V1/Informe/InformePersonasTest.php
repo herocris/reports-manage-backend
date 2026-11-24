@@ -59,7 +59,7 @@ class InformePersonasTest extends TestCase
         $this->assertModelExists($persona);
     }
 
-    public function test_detach_persona_does_not_delete_the_persona(): void
+    public function test_detach_persona_deletes_the_persona_after_removing_its_last_link(): void
     {
         $actor = $this->createAuthorizedUser(['informes.update']);
         $informe = Informe::factory()->create();
@@ -71,7 +71,36 @@ class InformePersonasTest extends TestCase
             ->assertOk();
 
         $this->assertModelExists($persona);
+        $this->assertSoftDeleted($persona);
+    }
+
+    public function test_detach_persona_preserves_an_unrelated_orphan_persona(): void
+    {
+        $actor = $this->createAuthorizedUser(['informes.update']);
+        $informe = Informe::factory()->create();
+        $persona = Persona::factory()->create();
+
+        $this->actingAs($actor)
+            ->deleteJson("/api/v1/informes/{$informe->id}/personas/{$persona->id}")
+            ->assertOk();
+
         $this->assertNotSoftDeleted($persona);
+    }
+
+    public function test_detach_persona_preserves_a_persona_linked_to_another_informe(): void
+    {
+        $actor = $this->createAuthorizedUser(['informes.update']);
+        $informe = Informe::factory()->create();
+        $otherInforme = Informe::factory()->create();
+        $persona = Persona::factory()->create();
+        $persona->informes()->attach([$informe->id, $otherInforme->id]);
+
+        $this->actingAs($actor)
+            ->deleteJson("/api/v1/informes/{$informe->id}/personas/{$persona->id}")
+            ->assertOk();
+
+        $this->assertNotSoftDeleted($persona);
+        $this->assertTrue($otherInforme->personas()->whereKey($persona->id)->exists());
     }
 
     public function test_attach_persona_requires_permission(): void

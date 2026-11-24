@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksCascadeDeletion;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,17 +18,17 @@ use Spatie\Activitylog\Support\LogOptions;
  * the event occurred. Bitacoras participate in cascade soft-delete with their
  * parent {@see Informe}; they are soft-deleted and restored together.
  *
- * @property int              $id           Auto-incrementing primary key.
- * @property string           $descripcion  Narrative of the logged event or activity.
- * @property \Carbon\Carbon   $fecha        Calendar date on which the event occurred.
- * @property int              $informe_id   FK → informes.id — the parent report.
- * @property \Carbon\Carbon|null $deleted_at  Timestamp of soft deletion; null when active.
- * @property \Carbon\Carbon   $created_at   Timestamp of record creation.
- * @property \Carbon\Carbon   $updated_at   Timestamp of last modification.
+ * @property int $id Auto-incrementing primary key.
+ * @property string $descripcion Narrative of the logged event or activity.
+ * @property Carbon $fecha Calendar date on which the event occurred.
+ * @property int $informe_id FK → informes.id — the parent report.
+ * @property Carbon|null $deleted_at Timestamp of soft deletion; null when active.
+ * @property Carbon $created_at Timestamp of record creation.
+ * @property Carbon $updated_at Timestamp of last modification.
  */
 class Bitacora extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes, TracksCascadeDeletion;
 
     protected $fillable = [
         'descripcion',

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Informe\CreateInformeAction;
+use App\Actions\Informe\DeleteInformeAction;
+use App\Actions\Informe\RestoreInformeAction;
+use App\Actions\Informe\UpdateInformeAction;
 use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Informe\IndexInformeRequest;
@@ -11,13 +15,13 @@ use App\Http\Resources\Api\V1\InformeResource;
 use App\Models\Bien;
 use App\Models\Informe;
 use App\Models\Persona;
+use App\Models\User;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\InformeIndexDefinition;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * Handles CRUD, cascade delete/restore, and relationship operations for Informe records.
@@ -69,15 +73,11 @@ class InformeController extends Controller
      * @param  StoreInformeRequest  $request  Validated creation payload.
      * @return JsonResponse 201 with the created {@see InformeResource} envelope.
      */
-    public function store(StoreInformeRequest $request): JsonResponse
+    public function store(StoreInformeRequest $request, CreateInformeAction $action): JsonResponse
     {
-        $validated = $request->validated();
-        $validated['usuariocreador_id'] = (int) Auth::id();
-        $informe = Informe::create($validated);
-
-        if (isset($validated['ambitos'])) {
-            $informe->ambitos()->sync($validated['ambitos']);
-        }
+        /** @var User $author */
+        $author = $request->user();
+        $informe = $action->execute($request->validated(), $author);
 
         return (new InformeResource($informe))
             ->additional([
@@ -149,14 +149,9 @@ class InformeController extends Controller
      * @param  Informe  $informe  The resolved Informe model instance.
      * @return InformeResource 200 with the updated resource envelope.
      */
-    public function update(UpdateInformeRequest $request, Informe $informe): InformeResource
+    public function update(UpdateInformeRequest $request, Informe $informe, UpdateInformeAction $action): InformeResource
     {
-        $validated = $request->validated();
-        $informe->update($validated);
-
-        if (array_key_exists('ambitos', $validated)) {
-            $informe->ambitos()->sync($validated['ambitos']);
-        }
+        $informe = $action->execute($informe, $request->validated());
 
         return (new InformeResource($informe))->additional([
             'success' => true,
@@ -176,13 +171,9 @@ class InformeController extends Controller
      * @param  Informe  $informe  The resolved Informe model instance.
      * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function destroy(Informe $informe): JsonResponse
+    public function destroy(Informe $informe, DeleteInformeAction $action): JsonResponse
     {
-        $informe->ubicaciones()->delete();
-        $informe->observaciones()->delete();
-        $informe->bitacoras()->delete();
-        $informe->adjuntos()->delete();
-        $informe->delete();
+        $action->execute($informe);
 
         return ApiResponse::success(null, 'Informe deleted successfully.');
     }
@@ -190,21 +181,15 @@ class InformeController extends Controller
     /**
      * Restore the informe and all its cascade-deleted child records.
      *
-     * Clears `deleted_at` on the informe and on each of its soft-deleted
-     * `ubicaciones`, `observaciones`, `bitacoras`, and `adjuntos`.
-     * The route for this action resolves the `{informe}` segment via a
-     * `withTrashed` binding registered in `AppServiceProvider`.
+     * Only child records marked with this informe's deletion batch are restored.
+     * Independently deleted children remain deleted.
      *
      * @param  Informe  $informe  The soft-deleted Informe model instance to restore.
      * @return JsonResponse 200 with a success envelope and null data.
      */
-    public function restore(Informe $informe): JsonResponse
+    public function restore(Informe $informe, RestoreInformeAction $action): JsonResponse
     {
-        $informe->restore();
-        $informe->ubicaciones()->withTrashed()->restore();
-        $informe->observaciones()->withTrashed()->restore();
-        $informe->bitacoras()->withTrashed()->restore();
-        $informe->adjuntos()->withTrashed()->restore();
+        $action->execute($informe);
 
         return ApiResponse::success(null, 'Informe restored successfully.');
     }
@@ -238,8 +223,8 @@ class InformeController extends Controller
     /**
      * Unlink a Persona from the informe's `informe_persona` pivot table.
      *
-     * The Persona record itself is not affected; only the pivot row is removed.
-     * Silently succeeds even if the persona is not currently linked.
+     * A persona is soft-deleted only after an existing link is removed and
+     * no active informes remain. An absent link leaves the persona unchanged.
      *
      * @param  Informe  $informe  The resolved Informe model instance.
      * @param  Persona  $persona  The resolved Persona model instance to detach.
@@ -247,8 +232,9 @@ class InformeController extends Controller
      */
     public function detachPersona(Informe $informe, Persona $persona): JsonResponse
     {
-        $informe->personas()->detach($persona->id);
-        if ($persona->informes()->count() === 0) {
+        $detached = $informe->personas()->detach($persona->id);
+
+        if ($detached > 0 && ! $persona->informes()->exists()) {
             $persona->delete();
         }
 
