@@ -65,14 +65,13 @@ class UserDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     #[OA\Post(
         path: '/users',
         tags: ['Users'],
         summary: 'Crear usuario',
+        description: 'Asignar roles requiere users.assign-roles. Solo se pueden asignar roles cuyos permisos posee el actor.',
         security: [['BearerAuth' => []], ['SanctumCookie' => []]],
         requestBody: new OA\RequestBody(
             required: true,
@@ -87,9 +86,7 @@ class UserDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function store(): void
-    {
-    }
+    public function store(): void {}
 
     #[OA\Get(
         path: '/users/{user}',
@@ -108,14 +105,13 @@ class UserDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function show(): void
-    {
-    }
+    public function show(): void {}
 
     #[OA\Put(
         path: '/users/{user}',
         tags: ['Users'],
         summary: 'Actualizar usuario (PUT)',
+        description: 'Asignar o quitar roles requiere users.assign-roles. No permite modificar usuarios con permisos que el actor no posee.',
         security: [['BearerAuth' => []], ['SanctumCookie' => []]],
         parameters: [
             new OA\Parameter(name: 'user', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
@@ -134,14 +130,13 @@ class UserDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function update(): void
-    {
-    }
+    public function update(): void {}
 
     #[OA\Patch(
         path: '/users/{user}',
         tags: ['Users'],
         summary: 'Actualizar usuario (PATCH)',
+        description: 'Asignar o quitar roles requiere users.assign-roles. No permite modificar usuarios con permisos que el actor no posee.',
         security: [['BearerAuth' => []], ['SanctumCookie' => []]],
         parameters: [
             new OA\Parameter(name: 'user', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
@@ -160,9 +155,7 @@ class UserDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function updatePatch(): void
-    {
-    }
+    public function updatePatch(): void {}
 
     #[OA\Delete(
         path: '/users/{user}',
@@ -181,9 +174,7 @@ class UserDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function destroy(): void
-    {
-    }
+    public function destroy(): void {}
 
     #[OA\Post(
         path: '/users/{user}/restore',
@@ -202,7 +193,5 @@ class UserDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function restore(): void
-    {
-    }
+    public function restore(): void {}
 }

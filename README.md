@@ -37,11 +37,27 @@ Documentación interactiva (Swagger UI): [`/api/documentation`](http://localhost
 
 ```bash
 cp .env.example .env
-composer install
-vendor/bin/sail up -d
-vendor/bin/sail artisan migrate --seed
-vendor/bin/sail artisan key:generate
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/var/www/html" -w /var/www/html laravelsail/php85-composer:latest composer install --no-interaction
+vendor/bin/sail up -d --wait
+vendor/bin/sail artisan key:generate --no-interaction
+vendor/bin/sail artisan migrate --seed --no-interaction
 ```
+
+El entorno de Sail y los tests utilizan MySQL 8.4. Para crear el administrador inicial, configurar `ADMIN_EMAIL` y `ADMIN_PASSWORD` en `.env` antes del seed; la contraseña debe tener al menos 16 caracteres. Si ambas variables están vacías, no se crea ningún administrador. Los datos de demostración se generan únicamente en `local` y `testing`.
+
+Al actualizar una instalación existente, ejecutar las migraciones, sincronizar el catálogo de permisos y trasladar los adjuntos durante una ventana de mantenimiento:
+
+```bash
+vendor/bin/sail artisan down --no-interaction
+vendor/bin/sail artisan migrate --no-interaction
+vendor/bin/sail artisan db:seed --class=RolesAndPermissionsSeeder --no-interaction
+vendor/bin/sail artisan adjuntos:privatize --no-interaction
+vendor/bin/sail artisan up --no-interaction
+```
+
+El traslado conserva las rutas, verifica que el contenido de la copia privada coincida y solo entonces elimina la copia pública. Es reejecutable; si hay un conflicto entre copias, conserva ambas y termina con error. Corregir cualquier error antes de reabrir la aplicación. Las contraseñas preexistentes no se cambian al ejecutar el seeder.
+
+El seeder del administrador rechaza un email que ya pertenezca a una cuenta no administradora o eliminada; no promueve cuentas preexistentes. Si una instalación conserva cuentas antiguas con contraseñas de demostración, es necesario cambiarlas expresamente.
 
 ---
 
@@ -84,7 +100,7 @@ Respuesta `200 OK`:
 Authorization: Bearer 1|exampleToken...
 ```
 
-**3. Logout — revoca TODOS los tokens del usuario**
+**3. Logout — revoca únicamente el token usado en esta petición**
 
 ```http
 POST /api/v1/auth/mobile/logout
@@ -264,18 +280,18 @@ GET /api/v1/informes?per_page=25&page=2
 
 Usar el parámetro `sort`. Los campos disponibles varían por recurso (ver sección [Recursos disponibles](#recursos-disponibles)).
 
-El prefijo `-` invierte el orden (descendente):
+Usar `direction=asc` o `direction=desc` para indicar el sentido. El orden por defecto es descendente y los empates se resuelven por `id`:
 
 | Valor       | Equivale a          |
 |-------------|---------------------|
-| `sort=id`   | ORDER BY id ASC     |
-| `sort=-id`  | ORDER BY id DESC    |
+| `sort=id&direction=asc`   | ORDER BY id ASC     |
+| `sort=id&direction=desc`  | ORDER BY id DESC    |
 
 **Ejemplo:**
 
 ```http
-GET /api/v1/informes?sort=-created_at
-GET /api/v1/users?sort=name
+GET /api/v1/informes?sort=created_at&direction=desc
+GET /api/v1/users?sort=name&direction=asc
 ```
 
 ---
@@ -306,6 +322,10 @@ GET /api/v1/informes?filter[producto_id]=3&filter[fecha_inicio]=2024-01-01
 ```http
 GET /api/v1/bienes?filter[tipobien_id]=2&filter[informe_id]=10
 ```
+
+Los filtros y campos de `include` o `fields` desconocidos devuelven `422`. Las reglas y consultas se declaran juntas en `app/Support/Query/Definitions`; los Requests de listado comparten la validación y normalización de `IndexRequest`.
+
+`fields` admite una lista separada por comas o un array. La clave primaria y las claves necesarias para resolver los includes se conservan automáticamente.
 
 ---
 
@@ -339,7 +359,7 @@ GET /api/v1/informes?include=producto,personas,bienes
 | `bienes`        | `tipoBien`, `adjuntos`                                                                                                  |
 | `productos`     | _(ninguno)_                                                                                                             |
 | `informes`      | `producto`, `personas`, `bienes`, `adjuntos`, `ubicaciones`, `observaciones`, `bitacoras`, `ambitos`, `usuarioCreador` |
-| `observaciones` | `informe`                                                                                                               |
+| `observaciones` | `informe`, `usuario`, `cerradaPor`, `comentarios`                                                                          |
 | `bitacoras`     | `informe`                                                                                                               |
 | `ubicaciones`   | `informe`                                                                                                               |
 | `adjuntos`      | _(ninguno)_                                                                                                             |
@@ -363,6 +383,10 @@ POST /api/v1/{recurso}/{id}/restore
 
 Requiere el permiso `{recurso}.restore`.
 
+Al eliminar un informe, sus hijos activos se identifican con un lote de borrado. Restaurar ese informe recupera únicamente los hijos de ese lote; conserva eliminados los borrados previamente de forma independiente. Los informes eliminados antes de incorporar los lotes se restauran sin recuperar automáticamente sus hijos, cuyo origen de borrado requiere revisión.
+
+Desvincular una persona elimina su registro de forma lógica únicamente si se quitó un vínculo existente y ya no tiene informes activos.
+
 ---
 
 ## Rate limiting
@@ -379,6 +403,16 @@ Al exceder el límite, la API devuelve `429 Too Many Requests`.
 ## Permisos
 
 Los endpoints protegidos requieren permisos específicos asignados al usuario. El patrón de naming es `{recurso}.{accion}`.
+
+La asignación de roles requiere adicionalmente `users.assign-roles`. Un usuario solo puede delegar permisos que ya posee y administrar usuarios o roles cuyos permisos están dentro de los suyos. El nombre `super-admin` no concede privilegios por sí solo: el seeder asigna los permisos efectivos a ese rol.
+
+El catálogo integrado se define en `App\Support\Authorization\PermissionCatalog`. Sus permisos no pueden renombrarse ni eliminarse por API. Los endpoints de permisos personalizados mantienen controles de delegación. Los cambios de usuarios/roles y sus asociaciones son transaccionales.
+
+Al añadir capacidades en aplicaciones derivadas, extender el catálogo junto a sus rutas y volver a ejecutar `RolesAndPermissionsSeeder`. La protección de cuentas y roles contempla también sus privilegios eliminados para impedir apropiarse de una cuenta antes de que estos se restauren.
+
+Los adjuntos se guardan en el disco privado `attachments` y se sirven mediante los endpoints autorizados `download` y `stream`. Su ruta `url` es de solo lectura; solo la descripción se modifica por API. Cada carga admite hasta 20 imágenes de 10MB cada una y revierte registros y archivos ante fallos parciales.
+
+Para colecciones grandes, utilizar los listados paginados de observaciones, bitácoras, ubicaciones y adjuntos con `filter[informe_id]`. El endpoint de edición de informes conserva su contrato de carga completa para los clientes existentes.
 
 **Acciones estándar:**
 

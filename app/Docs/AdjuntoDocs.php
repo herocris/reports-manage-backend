@@ -9,7 +9,9 @@ use OpenApi\Attributes as OA;
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
-        new OA\Property(property: 'url', type: 'string', format: 'uri', example: 'https://example.com/storage/adjuntos/foto.jpg'),
+        new OA\Property(property: 'url', type: 'string', readOnly: true, description: 'Ruta interna en almacenamiento privado; usar download_url o stream_url', example: 'adjuntos/informe/foto.jpg'),
+        new OA\Property(property: 'download_url', type: 'string', format: 'uri', readOnly: true),
+        new OA\Property(property: 'stream_url', type: 'string', format: 'uri', readOnly: true),
         new OA\Property(property: 'descripcion', type: 'string', example: 'Foto del predio'),
         new OA\Property(property: 'adjuntable_id', type: 'integer', example: 1),
         new OA\Property(property: 'adjuntable_type', type: 'string', example: 'App\\Models\\Informe'),
@@ -28,7 +30,8 @@ use OpenApi\Attributes as OA;
             property: 'archivos',
             type: 'array',
             items: new OA\Items(type: 'string', format: 'binary'),
-            description: 'Imagenes (max 10MB c/u)'
+            maxItems: 20,
+            description: 'Hasta 20 imágenes (máximo 10MB cada una), almacenadas de forma privada'
         ),
     ]
 )]
@@ -52,9 +55,7 @@ class AdjuntoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     #[OA\Post(
         path: '/adjuntos',
@@ -80,9 +81,7 @@ class AdjuntoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function store(): void
-    {
-    }
+    public function store(): void {}
 
     #[OA\Get(
         path: '/adjuntos/{adjunto}',
@@ -101,9 +100,7 @@ class AdjuntoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function show(): void
-    {
-    }
+    public function show(): void {}
 
     #[OA\Delete(
         path: '/adjuntos/{adjunto}',
@@ -122,9 +119,7 @@ class AdjuntoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function destroy(): void
-    {
-    }
+    public function destroy(): void {}
 
     #[OA\Get(
         path: '/adjuntos/{adjunto}/download',
@@ -147,7 +142,5 @@ class AdjuntoDocs
             new OA\Response(response: 500, description: 'Error del servidor', content: new OA\JsonContent(ref: '#/components/schemas/ServerErrorResponse')),
         ]
     )]
-    public function download(): void
-    {
-    }
+    public function download(): void {}
 }

@@ -8509,6 +8509,7 @@
                     "Users"
                 ],
                 "summary": "Crear usuario",
+                "description": "Asignar roles requiere users.assign-roles. Solo se pueden asignar roles cuyos permisos posee el actor.",
                 "operationId": "7ccba178f9ac51b524c38a40d312d9bc",
                 "requestBody": {
                     "required": true,
@@ -8686,6 +8687,7 @@
                     "Users"
                 ],
                 "summary": "Actualizar usuario (PUT)",
+                "description": "Asignar o quitar roles requiere users.assign-roles. No permite modificar usuarios con permisos que el actor no posee.",
                 "operationId": "b0467b01b929bd0677c8d9059aae9717",
                 "parameters": [
                     {
@@ -8882,6 +8884,7 @@
                     "Users"
                 ],
                 "summary": "Actualizar usuario (PATCH)",
+                "description": "Asignar o quitar roles requiere users.assign-roles. No permite modificar usuarios con permisos que el actor no posee.",
                 "operationId": "fa61aa2cc1b76a9ea199f865caf77b5d",
                 "parameters": [
                     {
@@ -9130,6 +9133,14 @@
                             "old": []
                         }
                     },
+                    "attribute_changes": {
+                        "description": "Cambios de atributos con contraseñas y tokens de sesión omitidos, incluidos registros históricos.",
+                        "type": "object",
+                        "example": {
+                            "attributes": [],
+                            "old": []
+                        }
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
@@ -9148,9 +9159,20 @@
                         "example": 1
                     },
                     "url": {
+                        "description": "Ruta interna en almacenamiento privado; usar download_url o stream_url",
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "adjuntos/informe/foto.jpg"
+                    },
+                    "download_url": {
                         "type": "string",
                         "format": "uri",
-                        "example": "https://example.com/storage/adjuntos/foto.jpg"
+                        "readOnly": true
+                    },
+                    "stream_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
                     },
                     "descripcion": {
                         "type": "string",
@@ -9196,12 +9218,13 @@
                         "example": 1
                     },
                     "archivos": {
-                        "description": "Imagenes (max 10MB c/u)",
+                        "description": "Hasta 20 imágenes (máximo 10MB cada una), almacenadas de forma privada",
                         "type": "array",
                         "items": {
                             "type": "string",
                             "format": "binary"
-                        }
+                        },
+                        "maxItems": 20
                     }
                 },
                 "type": "object"

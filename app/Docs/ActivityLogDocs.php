@@ -24,6 +24,7 @@ use OpenApi\Attributes as OA;
             ]
         ),
         new OA\Property(property: 'properties', type: 'object', example: ['attributes' => [], 'old' => []]),
+        new OA\Property(property: 'attribute_changes', description: 'Cambios de atributos con contraseñas y tokens de sesión omitidos, incluidos registros históricos.', type: 'object', example: ['attributes' => [], 'old' => []]),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
     ]
