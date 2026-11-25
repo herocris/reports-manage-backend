@@ -49,6 +49,19 @@ class IndexQueryTest extends TestCase
             ->assertJsonPath('data.0.id', $matching->id);
     }
 
+    public function test_informe_search_preserves_sql_wildcards(): void
+    {
+        $actor = $this->createAuthorizedUser(['informes.view']);
+        $matching = Informe::factory()->create(['titulo' => 'Prefix A Suffix text']);
+        Informe::factory()->create(['titulo' => 'Prefix AB Suffix text']);
+
+        $this->actingAs($actor)
+            ->getJson('/api/v1/informes?'.http_build_query(['search' => 'Prefix _ Suffix%']))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $matching->id);
+    }
+
     public function test_sparse_fields_preserve_keys_needed_to_load_relationships(): void
     {
         $actor = $this->createAuthorizedUser(['informes.view']);

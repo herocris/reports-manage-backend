@@ -19,11 +19,19 @@ class IndexInformeTest extends TestCase
     public function test_authenticated_user_can_list_informes(): void
     {
         $actor = $this->createAuthorizedUser(['informes.view']);
-        Informe::factory()->count(2)->create();
+        $recent = now()->startOfDay();
+        $firstRecent = Informe::factory()->create(['created_at' => $recent]);
+        $older = Informe::factory()->create(['created_at' => $recent->copy()->subDay()]);
+        $lastRecent = Informe::factory()->create(['created_at' => $recent]);
 
         $this->actingAs($actor)->getJson('/api/v1/informes')
             ->assertOk()
-            ->assertJsonStructure(['data', 'meta', 'links']);
+            ->assertJsonStructure(['data', 'meta', 'links'])
+            ->assertJsonPath('meta.per_page', 15)
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.id', $lastRecent->id)
+            ->assertJsonPath('data.1.id', $firstRecent->id)
+            ->assertJsonPath('data.2.id', $older->id);
     }
 
     public function test_authenticated_user_can_filter_informes_by_producto_name(): void
