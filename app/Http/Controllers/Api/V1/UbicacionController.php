@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Ubicacion\IndexUbicacionRequest;
 use App\Http\Requests\Api\V1\Ubicacion\StoreUbicacionRequest;
@@ -12,6 +11,7 @@ use App\Models\Informe;
 use App\Models\Ubicacion;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\UbicacionIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -26,8 +26,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class UbicacionController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of ubicaciones.
      *
@@ -38,9 +36,9 @@ class UbicacionController extends Controller
      * @param  IndexUbicacionRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<UbicacionResource>>
      */
-    public function index(IndexUbicacionRequest $request): AnonymousResourceCollection
+    public function index(IndexUbicacionRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $ubicaciones = $this->applyIndexQuery(
+        $ubicaciones = $indexQueryApplier->apply(
             Ubicacion::query(),
             $request->validated(),
             UbicacionIndexDefinition::definition(),

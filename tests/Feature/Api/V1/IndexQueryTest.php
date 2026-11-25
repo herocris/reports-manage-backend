@@ -108,16 +108,18 @@ class IndexQueryTest extends TestCase
         $actor = $this->createAuthorizedUser(['informes.view']);
         $informes = Informe::factory()->count(3)->create(['created_at' => now()->startOfDay()]);
 
-        $firstPage = $this->actingAs($actor)
+        $firstResponse = $this->actingAs($actor)
             ->getJson('/api/v1/informes?sort=created_at&direction=asc&per_page=2')
             ->assertOk()
-            ->json('data');
+            ->assertJsonCount(2, 'data');
 
-        $secondPage = $this->getJson('/api/v1/informes?sort=created_at&direction=asc&per_page=2&page=2')
+        $secondPage = $this->getJson($firstResponse->json('links.next'))
             ->assertOk()
+            ->assertJsonPath('meta.current_page', 2)
+            ->assertJsonCount(1, 'data')
             ->json('data');
 
-        $this->assertSame($informes->modelKeys(), array_column([...$firstPage, ...$secondPage], 'id'));
+        $this->assertSame($informes->modelKeys(), array_column([...$firstResponse->json('data'), ...$secondPage], 'id'));
     }
 
     public function test_sparse_user_fields_can_include_a_nullable_institucion(): void

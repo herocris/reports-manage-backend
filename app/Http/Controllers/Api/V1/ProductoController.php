@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Producto\IndexProductoRequest;
 use App\Http\Requests\Api\V1\Producto\StoreProductoRequest;
@@ -11,6 +10,7 @@ use App\Http\Resources\Api\V1\ProductoResource;
 use App\Models\Producto;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\ProductoIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,8 +25,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class ProductoController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of productos.
      *
@@ -37,9 +35,9 @@ class ProductoController extends Controller
      * @param  IndexProductoRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<ProductoResource>>
      */
-    public function index(IndexProductoRequest $request): AnonymousResourceCollection
+    public function index(IndexProductoRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $productos = $this->applyIndexQuery(
+        $productos = $indexQueryApplier->apply(
             Producto::query(),
             $request->validated(),
             ProductoIndexDefinition::definition(),

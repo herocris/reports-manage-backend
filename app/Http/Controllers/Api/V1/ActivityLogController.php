@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\ActivityLog\IndexActivityLogRequest;
 use App\Http\Resources\Api\V1\ActivityLogResource;
 use App\Models\ActivityLog;
 use App\Support\Query\Definitions\ActivityLogIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -24,8 +24,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class ActivityLogController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, chronologically-descending list of all activity log entries.
      *
@@ -35,9 +33,9 @@ class ActivityLogController extends Controller
      * @param  IndexActivityLogRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<ActivityLogResource>>
      */
-    public function index(IndexActivityLogRequest $request): AnonymousResourceCollection
+    public function index(IndexActivityLogRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $activities = $this->applyIndexQuery(
+        $activities = $indexQueryApplier->apply(
             ActivityLog::query()->with('causer'),
             $request->validated(),
             ActivityLogIndexDefinition::definition(),

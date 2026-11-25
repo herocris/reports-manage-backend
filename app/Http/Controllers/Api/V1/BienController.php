@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Bien\IndexBienRequest;
 use App\Http\Requests\Api\V1\Bien\StoreBienRequest;
@@ -12,6 +11,7 @@ use App\Models\Bien;
 use App\Models\Informe;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\BienIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -28,8 +28,6 @@ use Illuminate\Support\Facades\DB;
  */
 class BienController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of bienes.
      *
@@ -40,9 +38,9 @@ class BienController extends Controller
      * @param  IndexBienRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<BienResource>>
      */
-    public function index(IndexBienRequest $request): AnonymousResourceCollection
+    public function index(IndexBienRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $bienes = $this->applyIndexQuery(
+        $bienes = $indexQueryApplier->apply(
             Bien::query(),
             $request->validated(),
             BienIndexDefinition::definition(),

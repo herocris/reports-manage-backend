@@ -6,7 +6,6 @@ use App\Actions\Informe\CreateInformeAction;
 use App\Actions\Informe\DeleteInformeAction;
 use App\Actions\Informe\RestoreInformeAction;
 use App\Actions\Informe\UpdateInformeAction;
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Informe\IndexInformeRequest;
 use App\Http\Requests\Api\V1\Informe\StoreInformeRequest;
@@ -18,6 +17,7 @@ use App\Models\Persona;
 use App\Models\User;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\InformeIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,8 +36,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class InformeController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of informes.
      *
@@ -49,9 +47,9 @@ class InformeController extends Controller
      * @param  IndexInformeRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<InformeResource>>
      */
-    public function index(IndexInformeRequest $request): AnonymousResourceCollection
+    public function index(IndexInformeRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $informes = $this->applyIndexQuery(
+        $informes = $indexQueryApplier->apply(
             Informe::query(),
             $request->validated(),
             InformeIndexDefinition::definition(),

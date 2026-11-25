@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Institucion\IndexInstitucionRequest;
 use App\Http\Requests\Api\V1\Institucion\StoreInstitucionRequest;
@@ -11,6 +10,7 @@ use App\Http\Resources\Api\V1\InstitucionResource;
 use App\Models\Institucion;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\InstitucionIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,8 +24,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class InstitucionController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of instituciones.
      *
@@ -36,9 +34,9 @@ class InstitucionController extends Controller
      * @param  IndexInstitucionRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<InstitucionResource>>
      */
-    public function index(IndexInstitucionRequest $request): AnonymousResourceCollection
+    public function index(IndexInstitucionRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $instituciones = $this->applyIndexQuery(
+        $instituciones = $indexQueryApplier->apply(
             Institucion::query(),
             $request->validated(),
             InstitucionIndexDefinition::definition(),

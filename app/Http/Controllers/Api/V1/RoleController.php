@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Role\IndexRoleRequest;
 use App\Http\Requests\Api\V1\Role\StoreRoleRequest;
@@ -12,6 +11,7 @@ use App\Models\Role;
 use App\Support\Authorization\AccessControl;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\RoleIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,8 +30,6 @@ use Illuminate\Support\Facades\DB;
  */
 class RoleController extends Controller
 {
-    use AppliesIndexQuery;
-
     public function __construct(private AccessControl $accessControl) {}
 
     /**
@@ -43,9 +41,9 @@ class RoleController extends Controller
      * @param  IndexRoleRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<RoleResource>>
      */
-    public function index(IndexRoleRequest $request): AnonymousResourceCollection
+    public function index(IndexRoleRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $roles = $this->applyIndexQuery(
+        $roles = $indexQueryApplier->apply(
             Role::query()->withCount('users'),
             $request->validated(),
             RoleIndexDefinition::definition(),

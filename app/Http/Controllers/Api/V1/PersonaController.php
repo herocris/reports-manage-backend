@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Persona\IndexPersonaRequest;
 use App\Http\Requests\Api\V1\Persona\StorePersonaRequest;
@@ -12,6 +11,7 @@ use App\Models\Informe;
 use App\Models\Persona;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\PersonaIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -28,8 +28,6 @@ use Illuminate\Support\Facades\DB;
  */
 class PersonaController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of personas.
      *
@@ -40,9 +38,9 @@ class PersonaController extends Controller
      * @param  IndexPersonaRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<PersonaResource>>
      */
-    public function index(IndexPersonaRequest $request): AnonymousResourceCollection
+    public function index(IndexPersonaRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $personas = $this->applyIndexQuery(
+        $personas = $indexQueryApplier->apply(
             Persona::query(),
             $request->validated(),
             PersonaIndexDefinition::definition(),

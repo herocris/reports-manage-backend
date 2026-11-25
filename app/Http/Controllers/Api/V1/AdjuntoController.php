@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Adjunto\StoreAdjuntosAction;
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Adjunto\IndexAdjuntoRequest;
 use App\Http\Requests\Api\V1\Adjunto\StoreAdjuntoRequest;
@@ -15,6 +14,7 @@ use App\Models\Informe;
 use App\Models\Persona;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\AdjuntoIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -37,8 +37,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class AdjuntoController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of adjuntos.
      *
@@ -50,9 +48,9 @@ class AdjuntoController extends Controller
      * @param  IndexAdjuntoRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<AdjuntoResource>>
      */
-    public function index(IndexAdjuntoRequest $request): AnonymousResourceCollection
+    public function index(IndexAdjuntoRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $adjuntos = $this->applyIndexQuery(
+        $adjuntos = $indexQueryApplier->apply(
             Adjunto::query(),
             $request->validated(),
             AdjuntoIndexDefinition::definition(),

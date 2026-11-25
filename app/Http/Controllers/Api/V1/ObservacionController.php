@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Observacion\CloseObservacionAction;
 use App\Actions\Observacion\CreateObservacionAction;
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Observacion\CloseObservacionRequest;
 use App\Http\Requests\Api\V1\Observacion\IndexObservacionRequest;
@@ -17,6 +16,7 @@ use App\Models\Observacion;
 use App\Models\User;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\ObservacionIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -30,8 +30,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class ObservacionController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of observaciones.
      *
@@ -42,9 +40,9 @@ class ObservacionController extends Controller
      * @param  IndexObservacionRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<ObservacionResource>>
      */
-    public function index(IndexObservacionRequest $request): AnonymousResourceCollection
+    public function index(IndexObservacionRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $observaciones = $this->applyIndexQuery(
+        $observaciones = $indexQueryApplier->apply(
             Observacion::query(),
             $request->validated(),
             ObservacionIndexDefinition::definition(),

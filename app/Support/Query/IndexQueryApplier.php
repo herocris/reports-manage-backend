@@ -2,7 +2,6 @@
 
 namespace App\Support\Query;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,8 +14,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Applies the full index pipeline—pagination, sorting, search, filters,
  * field selection, includes, and soft-delete scoping—to an Eloquent query.
- *
- * Consumed by controllers via the {@see AppliesIndexQuery} trait.
  */
 class IndexQueryApplier
 {

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Bitacora\IndexBitacoraRequest;
 use App\Http\Requests\Api\V1\Bitacora\StoreBitacoraRequest;
@@ -11,6 +10,7 @@ use App\Http\Resources\Api\V1\BitacoraResource;
 use App\Models\Bitacora;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\BitacoraIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -26,8 +26,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class BitacoraController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of bitacoras.
      *
@@ -38,9 +36,9 @@ class BitacoraController extends Controller
      * @param  IndexBitacoraRequest  $request  Validated query parameters from the request.
      * @return AnonymousResourceCollection<LengthAwarePaginator<BitacoraResource>>
      */
-    public function index(IndexBitacoraRequest $request): AnonymousResourceCollection
+    public function index(IndexBitacoraRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $bitacoras = $this->applyIndexQuery(
+        $bitacoras = $indexQueryApplier->apply(
             Bitacora::query(),
             $request->validated(),
             BitacoraIndexDefinition::definition(),

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\TipoBien\IndexTipoBienRequest;
 use App\Http\Requests\Api\V1\TipoBien\StoreTipoBienRequest;
@@ -11,6 +10,7 @@ use App\Http\Resources\Api\V1\TipoBienResource;
 use App\Models\TipoBien;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\TipoBienIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,8 +24,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class TipoBienController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of tipos de bien.
      *
@@ -36,9 +34,9 @@ class TipoBienController extends Controller
      * @param  IndexTipoBienRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<TipoBienResource>>
      */
-    public function index(IndexTipoBienRequest $request): AnonymousResourceCollection
+    public function index(IndexTipoBienRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $tiposBien = $this->applyIndexQuery(
+        $tiposBien = $indexQueryApplier->apply(
             TipoBien::query(),
             $request->validated(),
             TipoBienIndexDefinition::definition(),

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Ambito\IndexAmbitoRequest;
 use App\Http\Requests\Api\V1\Ambito\StoreAmbitoRequest;
@@ -11,6 +10,7 @@ use App\Http\Resources\Api\V1\AmbitoResource;
 use App\Models\Ambito;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\AmbitoIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,8 +24,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class AmbitoController extends Controller
 {
-    use AppliesIndexQuery;
-
     /**
      * Return a paginated, filterable list of ambitos.
      *
@@ -36,9 +34,9 @@ class AmbitoController extends Controller
      * @param  IndexAmbitoRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<AmbitoResource>>
      */
-    public function index(IndexAmbitoRequest $request): AnonymousResourceCollection
+    public function index(IndexAmbitoRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $ambitos = $this->applyIndexQuery(
+        $ambitos = $indexQueryApplier->apply(
             Ambito::query(),
             $request->validated(),
             AmbitoIndexDefinition::definition(),

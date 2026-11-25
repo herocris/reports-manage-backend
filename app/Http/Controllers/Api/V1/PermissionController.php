@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\AppliesIndexQuery;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Permission\IndexPermissionRequest;
 use App\Http\Requests\Api\V1\Permission\StorePermissionRequest;
@@ -13,6 +12,7 @@ use App\Support\Authorization\AccessControl;
 use App\Support\Authorization\PermissionCatalog;
 use App\Support\Http\ApiResponse;
 use App\Support\Query\Definitions\PermissionIndexDefinition;
+use App\Support\Query\IndexQueryApplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,8 +32,6 @@ use Illuminate\Support\Facades\DB;
  */
 class PermissionController extends Controller
 {
-    use AppliesIndexQuery;
-
     public function __construct(private AccessControl $accessControl) {}
 
     /**
@@ -42,9 +40,9 @@ class PermissionController extends Controller
      * @param  IndexPermissionRequest  $request  Validated query parameters.
      * @return AnonymousResourceCollection<LengthAwarePaginator<PermissionResource>>
      */
-    public function index(IndexPermissionRequest $request): AnonymousResourceCollection
+    public function index(IndexPermissionRequest $request, IndexQueryApplier $indexQueryApplier): AnonymousResourceCollection
     {
-        $permissions = $this->applyIndexQuery(
+        $permissions = $indexQueryApplier->apply(
             Permission::query(),
             $request->validated(),
             PermissionIndexDefinition::definition(),
